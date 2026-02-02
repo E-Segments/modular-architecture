@@ -1,0 +1,72 @@
+{
+    "name": "esegments/modular-architecture",
+    "description": "Next-generation Laravel modular architecture with semantic versioning, dependency management, and intelligent tooling",
+    "keywords": [
+        "laravel",
+        "modules",
+        "modular",
+        "architecture",
+        "dependency-management",
+        "multi-tenancy"
+    ],
+    "homepage": "https://github.com/esegments/modular-architecture",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "ESegments",
+            "email": "hello@esegments.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0",
+        "illuminate/console": "^11.0|^12.0",
+        "illuminate/filesystem": "^11.0|^12.0",
+        "laravel/prompts": "^0.3",
+        "spatie/laravel-package-tools": "^1.16",
+        "composer/semver": "^3.0",
+        "marcj/topsort": "^2.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0",
+        "phpunit/phpunit": "^11.0",
+        "laravel/pint": "^1.0"
+    },
+    "suggest": {
+        "spatie/packagist-api": "Required for GitHub/Packagist installation (^2.1)"
+    },
+    "autoload": {
+        "psr-4": {
+            "Esegments\\ModularArchitecture\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Esegments\\ModularArchitecture\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
+        "format": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Esegments\\ModularArchitecture\\ModularServiceProvider"
+            ],
+            "aliases": {
+                "Modular": "Esegments\\ModularArchitecture\\Facades\\Modular"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

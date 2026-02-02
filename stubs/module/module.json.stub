@@ -1,0 +1,11 @@
+{
+    "name": "{{ MODULE_NAME }}",
+    "alias": "{{ MODULE_LOWER }}",
+    "version": "{{ MODULE_VERSION }}",
+    "description": "{{ MODULE_DESCRIPTION }}",
+    "priority": 0,
+    "providers": [
+        "Modules\\{{ MODULE_NAME }}\\Providers\\{{ MODULE_NAME }}ServiceProvider"
+    ],
+    "requires": {}
+}

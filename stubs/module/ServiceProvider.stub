@@ -1,0 +1,93 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\{{ MODULE_NAME }}\Providers;
+
+use Illuminate\Support\ServiceProvider;
+
+class {{ MODULE_NAME }}ServiceProvider extends ServiceProvider
+{
+    protected string $moduleName = '{{ MODULE_NAME }}';
+
+    protected string $moduleNameLower = '{{ MODULE_LOWER }}';
+
+    /**
+     * Register the service provider.
+     */
+    public function register(): void
+    {
+        $this->registerConfig();
+    }
+
+    /**
+     * Boot the application events.
+     */
+    public function boot(): void
+    {
+        $this->registerMigrations();
+        $this->registerViews();
+        $this->registerRoutes();
+    }
+
+    /**
+     * Register config.
+     */
+    protected function registerConfig(): void
+    {
+        $configPath = $this->modulePath('config/config.php');
+
+        if (file_exists($configPath)) {
+            $this->mergeConfigFrom($configPath, $this->moduleNameLower);
+        }
+    }
+
+    /**
+     * Register migrations.
+     */
+    protected function registerMigrations(): void
+    {
+        $migrationsPath = $this->modulePath('database/migrations');
+
+        if (is_dir($migrationsPath)) {
+            $this->loadMigrationsFrom($migrationsPath);
+        }
+    }
+
+    /**
+     * Register views.
+     */
+    protected function registerViews(): void
+    {
+        $viewsPath = $this->modulePath('resources/views');
+
+        if (is_dir($viewsPath)) {
+            $this->loadViewsFrom($viewsPath, $this->moduleNameLower);
+        }
+    }
+
+    /**
+     * Register routes.
+     */
+    protected function registerRoutes(): void
+    {
+        $webRoutes = $this->modulePath('routes/web.php');
+        $apiRoutes = $this->modulePath('routes/api.php');
+
+        if (file_exists($webRoutes)) {
+            $this->loadRoutesFrom($webRoutes);
+        }
+
+        if (file_exists($apiRoutes)) {
+            $this->loadRoutesFrom($apiRoutes);
+        }
+    }
+
+    /**
+     * Get the module path.
+     */
+    protected function modulePath(string $path = ''): string
+    {
+        return dirname(__DIR__, 2) . ($path ? '/' . $path : '');
+    }
+}
