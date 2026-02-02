@@ -11,19 +11,27 @@ use Esegments\ModularArchitecture\Commands\DependentsCommand;
 use Esegments\ModularArchitecture\Commands\DisableCommand;
 use Esegments\ModularArchitecture\Commands\EnableCommand;
 use Esegments\ModularArchitecture\Commands\GraphCommand;
+use Esegments\ModularArchitecture\Commands\InstallCommand;
 use Esegments\ModularArchitecture\Commands\ListCommand;
 use Esegments\ModularArchitecture\Commands\MakeModuleCommand;
 use Esegments\ModularArchitecture\Commands\OptimizeCommand;
+use Esegments\ModularArchitecture\Commands\OutdatedCommand;
 use Esegments\ModularArchitecture\Commands\RemoveCommand;
 use Esegments\ModularArchitecture\Commands\StatusCommand;
+use Esegments\ModularArchitecture\Commands\StorageMigrateCommand;
+use Esegments\ModularArchitecture\Commands\UpdateCommand;
 use Esegments\ModularArchitecture\Commands\ValidateCommand;
+use Esegments\ModularArchitecture\Contracts\ModuleStorageContract;
 use Esegments\ModularArchitecture\Discovery\ModuleDiscovery;
 use Esegments\ModularArchitecture\Discovery\ModuleStateManager;
 use Esegments\ModularArchitecture\Discovery\PathScanner;
+use Esegments\ModularArchitecture\GitHub\GitHubClient;
+use Esegments\ModularArchitecture\GitHub\ModuleInstaller;
 use Esegments\ModularArchitecture\Registry\ModuleRegistry;
 use Esegments\ModularArchitecture\Resolver\DependencyResolver;
 use Esegments\ModularArchitecture\Scaffolding\ModuleGenerator;
 use Esegments\ModularArchitecture\Scaffolding\StubProcessor;
+use Esegments\ModularArchitecture\Storage\StorageManager;
 use Esegments\ModularArchitecture\Validation\DependencyValidator;
 use Esegments\ModularArchitecture\Validation\ModuleValidator;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
@@ -42,6 +50,7 @@ class ModularServiceProvider extends ServiceProvider
             'modular'
         );
 
+        $this->registerStorage();
         $this->registerPathScanner();
         $this->registerStateManager();
         $this->registerDiscovery();
@@ -50,6 +59,7 @@ class ModularServiceProvider extends ServiceProvider
         $this->registerValidators();
         $this->registerCache();
         $this->registerScaffolding();
+        $this->registerGitHub();
         $this->registerModular();
     }
 
@@ -66,6 +76,10 @@ class ModularServiceProvider extends ServiceProvider
             __DIR__ . '/../stubs' => base_path('stubs/modular'),
         ], 'modular-stubs');
 
+        $this->publishes([
+            __DIR__ . '/../database/migrations/create_modules_table.php.stub' => database_path('migrations/' . date('Y_m_d_His') . '_create_modules_table.php'),
+        ], 'modular-migrations');
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 MakeModuleCommand::class,
@@ -80,6 +94,10 @@ class ModularServiceProvider extends ServiceProvider
                 CacheCommand::class,
                 CacheClearCommand::class,
                 OptimizeCommand::class,
+                InstallCommand::class,
+                UpdateCommand::class,
+                OutdatedCommand::class,
+                StorageMigrateCommand::class,
             ]);
         }
 
@@ -87,6 +105,23 @@ class ModularServiceProvider extends ServiceProvider
         if (config('modular.discovery.auto', true)) {
             $this->registerModuleProviders();
         }
+    }
+
+    /**
+     * Register storage manager.
+     */
+    protected function registerStorage(): void
+    {
+        $this->app->singleton(StorageManager::class, function ($app) {
+            return new StorageManager(
+                files: $app->make(Filesystem::class),
+                config: config('modular.storage', []),
+            );
+        });
+
+        $this->app->bind(ModuleStorageContract::class, function ($app) {
+            return $app->make(StorageManager::class)->driver();
+        });
     }
 
     /**
@@ -108,9 +143,11 @@ class ModularServiceProvider extends ServiceProvider
     protected function registerStateManager(): void
     {
         $this->app->singleton(ModuleStateManager::class, function ($app) {
+            $storage = $app->make(ModuleStorageContract::class);
+
             return new ModuleStateManager(
                 files: $app->make(Filesystem::class),
-                stateFile: config('modular.state_file', base_path('modules_statuses.json')),
+                stateFile: config('modular.storage.states_file', storage_path('modular/modules_statuses.json')),
                 protectedModules: config('modular.protected', []),
             );
         });
@@ -184,7 +221,7 @@ class ModularServiceProvider extends ServiceProvider
             return new ModuleCache(
                 cache: $app->make(CacheRepository::class),
                 files: $app->make(Filesystem::class),
-                cachePath: config('modular.cache.path', storage_path('framework/cache/modular')),
+                cachePath: config('modular.cache.path', storage_path('modular/cache')),
                 ttl: config('modular.cache.ttl', 86400),
                 enabled: config('modular.cache.enabled', true),
             );
@@ -214,6 +251,30 @@ class ModularServiceProvider extends ServiceProvider
                 stubProcessor: $app->make(StubProcessor::class),
                 pathScanner: $app->make(PathScanner::class),
                 config: config('modular.scaffolding', []),
+            );
+        });
+    }
+
+    /**
+     * Register GitHub integration.
+     */
+    protected function registerGitHub(): void
+    {
+        $this->app->singleton(GitHubClient::class, function ($app) {
+            return new GitHubClient(
+                token: config('modular.github.token'),
+                timeout: config('modular.github.timeout', 30),
+                verifySsl: config('modular.github.verify_ssl', true),
+            );
+        });
+
+        $this->app->singleton(ModuleInstaller::class, function ($app) {
+            return new ModuleInstaller(
+                github: $app->make(GitHubClient::class),
+                files: $app->make(Filesystem::class),
+                pathScanner: $app->make(PathScanner::class),
+                tempPath: config('modular.github.temp_path', storage_path('modular/temp')),
+                backupPath: config('modular.github.backup_path', storage_path('modular/backups')),
             );
         });
     }
@@ -278,6 +339,10 @@ class ModularServiceProvider extends ServiceProvider
             ModuleGenerator::class,
             StubProcessor::class,
             PathScanner::class,
+            StorageManager::class,
+            ModuleStorageContract::class,
+            GitHubClient::class,
+            ModuleInstaller::class,
         ];
     }
 }

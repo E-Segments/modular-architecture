@@ -9,6 +9,8 @@ A next-generation Laravel modular architecture package with semantic versioning,
 - **Circular Detection** - Detect and prevent circular dependencies
 - **Load Order Resolution** - Topological sorting via `marcj/topsort`
 - **Protected Modules** - Prevent critical modules from being disabled
+- **Storage Drivers** - Filesystem or Database storage for module states
+- **GitHub Integration** - Install modules directly from GitHub repositories
 - **Octane Compatible** - Static property caching for Laravel Octane
 - **Beautiful CLI** - Interactive commands with Laravel Prompts
 - **Validation** - Comprehensive module and dependency validation
@@ -20,10 +22,17 @@ A next-generation Laravel modular architecture package with semantic versioning,
 composer require esegments/modular-architecture
 ```
 
-Publish the configuration (optional):
+Publish the configuration:
 
 ```bash
 php artisan vendor:publish --tag=modular-config
+```
+
+For database storage, publish and run migrations:
+
+```bash
+php artisan vendor:publish --tag=modular-migrations
+php artisan migrate
 ```
 
 ## Quick Start
@@ -39,6 +48,23 @@ php artisan modular:make Blog --all
 
 # With specific components
 php artisan modular:make Products --model --controller --routes
+```
+
+### Install from GitHub
+
+```bash
+# Install from GitHub repository
+php artisan modular:install esegments/blog-module
+
+# Install specific version
+php artisan modular:install esegments/blog-module --version=v1.0.0
+
+# Check for updates
+php artisan modular:outdated
+
+# Update modules
+php artisan modular:update Blog
+php artisan modular:update --all
 ```
 
 ### Module Structure
@@ -93,9 +119,91 @@ Modules/
 | `modular:dependents {name}` | Show modules depending on a module |
 | `modular:graph` | Visualize dependency graph |
 | `modular:remove {name}` | Remove a module |
+| `modular:install {source}` | Install module from GitHub |
+| `modular:update {name}` | Update installed modules |
+| `modular:outdated` | Check for module updates |
 | `modular:cache` | Build discovery cache |
 | `modular:cache:clear` | Clear module caches |
 | `modular:optimize` | Optimize for production |
+| `modular:storage:migrate` | Migrate between storage drivers |
+
+## Storage Configuration
+
+### Filesystem Storage (Default)
+
+```env
+MODULAR_STORAGE_DRIVER=file
+MODULAR_STORAGE_PATH=storage/modular
+```
+
+### Database Storage
+
+```env
+MODULAR_STORAGE_DRIVER=database
+MODULAR_STORAGE_TABLE=modules
+MODULAR_STORAGE_CONNECTION=mysql
+```
+
+Run the migration:
+
+```bash
+php artisan vendor:publish --tag=modular-migrations
+php artisan migrate
+```
+
+### Migrate Between Drivers
+
+```bash
+php artisan modular:storage:migrate --from=file --to=database
+```
+
+## GitHub Integration
+
+### Configuration
+
+```env
+# Optional: GitHub token for private repos and higher rate limits
+MODULAR_GITHUB_TOKEN=ghp_xxxxxxxxxxxxx
+```
+
+### Install Modules
+
+```bash
+# From owner/repo
+php artisan modular:install esegments/blog-module
+
+# From full URL
+php artisan modular:install https://github.com/esegments/blog-module
+
+# Specific version
+php artisan modular:install esegments/blog-module --version=v2.0.0
+```
+
+### Check for Updates
+
+```bash
+# Show all outdated modules
+php artisan modular:outdated
+
+# Output as JSON
+php artisan modular:outdated --json
+```
+
+### Update Modules
+
+```bash
+# Update specific module
+php artisan modular:update Blog
+
+# Update to specific version
+php artisan modular:update Blog --version=v2.0.0
+
+# Update all modules
+php artisan modular:update --all
+
+# Dry run (show what would be updated)
+php artisan modular:update --all --dry-run
+```
 
 ## Usage
 
@@ -168,10 +276,23 @@ return [
         'Core',
     ],
 
+    // Storage configuration
+    'storage' => [
+        'driver' => env('MODULAR_STORAGE_DRIVER', 'file'), // 'file' or 'database'
+        'path' => storage_path('modular'),
+        'table' => 'modules',
+    ],
+
     // Cache settings
     'cache' => [
         'enabled' => env('MODULAR_CACHE', true),
         'ttl' => 86400,
+    ],
+
+    // GitHub integration
+    'github' => [
+        'token' => env('MODULAR_GITHUB_TOKEN'),
+        'timeout' => 30,
     ],
 
     // Strict mode (fail on missing dependencies)
