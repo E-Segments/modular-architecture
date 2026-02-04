@@ -7,8 +7,13 @@ namespace Esegments\ModularArchitecture\Registry;
 use Esegments\ModularArchitecture\Discovery\ModuleDiscovery;
 use Esegments\ModularArchitecture\Discovery\ModuleStateManager;
 use Esegments\ModularArchitecture\Exceptions\DependencyException;
+use Esegments\ModularArchitecture\Exceptions\ExtensionVetoException;
 use Esegments\ModularArchitecture\Exceptions\ModuleNotFoundException;
 use Esegments\ModularArchitecture\Exceptions\ProtectedModuleException;
+use Esegments\ModularArchitecture\Extensions\Points\BeforeModuleDisable;
+use Esegments\ModularArchitecture\Extensions\Points\BeforeModuleEnable;
+use Esegments\ModularArchitecture\Extensions\Points\ModuleDisabled;
+use Esegments\ModularArchitecture\Extensions\Points\ModuleEnabled;
 use Esegments\ModularArchitecture\Module\Module;
 use Esegments\ModularArchitecture\Module\ModuleCollection;
 use Esegments\ModularArchitecture\Resolver\DependencyResolver;
@@ -104,6 +109,9 @@ class ModuleRegistry
 
     /**
      * Enable a module.
+     *
+     * @throws DependencyException If a required dependency is not enabled
+     * @throws ExtensionVetoException If an extension handler vetoed the operation
      */
     public function enable(string $name): Module
     {
@@ -116,15 +124,38 @@ class ModuleRegistry
             }
         }
 
+        // Dispatch BeforeModuleEnable extension point (if available)
+        if ($this->hasExtensionsSupport()) {
+            $beforeEnable = new BeforeModuleEnable($module, $name);
+            $canProceed = $this->dispatchInterruptible($beforeEnable);
+
+            if (! $canProceed || $beforeEnable->hasErrors()) {
+                throw ExtensionVetoException::forEnable(
+                    $name,
+                    $beforeEnable->errors,
+                    $beforeEnable->getInterruptedBy(),
+                );
+            }
+        }
+
         $module->enable();
         $this->stateManager->enable($name);
         $this->clearCache();
+
+        // Dispatch ModuleEnabled extension point (if available)
+        if ($this->hasExtensionsSupport()) {
+            $this->dispatch(new ModuleEnabled($module, $name));
+        }
 
         return $module;
     }
 
     /**
      * Disable a module.
+     *
+     * @throws ProtectedModuleException If the module is protected
+     * @throws DependencyException If other enabled modules depend on this module
+     * @throws ExtensionVetoException If an extension handler vetoed the operation
      */
     public function disable(string $name): Module
     {
@@ -144,9 +175,28 @@ class ModuleRegistry
             );
         }
 
+        // Dispatch BeforeModuleDisable extension point (if available)
+        if ($this->hasExtensionsSupport()) {
+            $beforeDisable = new BeforeModuleDisable($module, $name);
+            $canProceed = $this->dispatchInterruptible($beforeDisable);
+
+            if (! $canProceed || $beforeDisable->hasErrors()) {
+                throw ExtensionVetoException::forDisable(
+                    $name,
+                    $beforeDisable->errors,
+                    $beforeDisable->getInterruptedBy(),
+                );
+            }
+        }
+
         $module->disable();
         $this->stateManager->disable($name);
         $this->clearCache();
+
+        // Dispatch ModuleDisabled extension point (if available)
+        if ($this->hasExtensionsSupport()) {
+            $this->dispatch(new ModuleDisabled($module, $name));
+        }
 
         return $module;
     }
@@ -232,5 +282,30 @@ class ModuleRegistry
     public function enabledCount(): int
     {
         return $this->enabled()->count();
+    }
+
+    /**
+     * Check if the extensions package is available.
+     */
+    protected function hasExtensionsSupport(): bool
+    {
+        return class_exists(\Esegments\LaravelExtensions\ExtensionDispatcher::class)
+            && app()->bound(\Esegments\LaravelExtensions\ExtensionDispatcher::class);
+    }
+
+    /**
+     * Dispatch an extension point.
+     */
+    protected function dispatch(object $extensionPoint): object
+    {
+        return app(\Esegments\LaravelExtensions\ExtensionDispatcher::class)->dispatch($extensionPoint);
+    }
+
+    /**
+     * Dispatch an interruptible extension point and return whether to proceed.
+     */
+    protected function dispatchInterruptible(object $extensionPoint): bool
+    {
+        return app(\Esegments\LaravelExtensions\ExtensionDispatcher::class)->dispatchInterruptible($extensionPoint);
     }
 }

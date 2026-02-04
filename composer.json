@@ -26,7 +26,8 @@
         "laravel/prompts": "^0.3",
         "spatie/laravel-package-tools": "^1.16",
         "composer/semver": "^3.0",
-        "marcj/topsort": "^2.0"
+        "marcj/topsort": "^2.0",
+        "sweetchuck/cdd": "^2.0"
     },
     "require-dev": {
         "orchestra/testbench": "^9.0|^10.0",
@@ -34,6 +35,7 @@
         "laravel/pint": "^1.0"
     },
     "suggest": {
+        "esegments/laravel-extensions": "Required for module lifecycle extension points (^1.0)",
         "spatie/packagist-api": "Required for GitHub/Packagist installation (^2.1)"
     },
     "autoload": {
