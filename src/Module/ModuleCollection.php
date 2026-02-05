@@ -52,11 +52,23 @@ class ModuleCollection extends Collection
     }
 
     /**
+     * Sort modules by name alphabetically.
+     */
+    public function sortByName(): self
+    {
+        return $this->sortBy(fn (Module $module) => strtolower($module->getName()));
+    }
+
+    /**
      * Find module by name.
+     */
+    /**
+     * Find a module by name.
+     * O(1) lookup since collection is keyed by module name.
      */
     public function findByName(string $name): ?Module
     {
-        return $this->first(fn (Module $module) => $module->getName() === $name);
+        return $this->get($name);
     }
 
     /**
@@ -84,7 +96,7 @@ class ModuleCollection extends Collection
     {
         $module = $this->findByName($moduleName);
         if (! $module) {
-            return new self();
+            return new self;
         }
 
         $requires = array_keys($module->getRequires());

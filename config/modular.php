@@ -44,7 +44,7 @@ return [
     |
     */
 
-    'exclude' => ['vendor', 'node_modules', 'tests'],
+    'exclude' => ['vendor', 'node_modules', 'tests', '.git'],
 
     /*
     |--------------------------------------------------------------------------
@@ -117,6 +117,7 @@ return [
     'discovery' => [
         'auto' => env('MODULAR_DISCOVERY_AUTO', true),
         'logging' => env('MODULAR_DISCOVERY_LOGGING', false),
+        'max_depth' => env('MODULAR_DISCOVERY_MAX_DEPTH', 2),
     ],
 
     /*
@@ -158,6 +159,7 @@ return [
     */
 
     'scaffolding' => [
+        'namespace' => env('MODULAR_NAMESPACE', 'Modules'),
         'vendor' => env('MODULAR_VENDOR', 'esegments'),
         'author_name' => env('MODULAR_AUTHOR_NAME'),
         'author_email' => env('MODULAR_AUTHOR_EMAIL'),
@@ -185,5 +187,41 @@ return [
     */
 
     'debug' => env('MODULAR_DEBUG', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Command Overrides
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, Laravel's make:* commands will be extended with a --module
+    | option allowing you to generate classes directly into modules.
+    |
+    | Supported commands: make:model, make:controller, make:migration,
+    | make:seeder, make:factory, make:policy, make:event, make:listener,
+    | make:job, make:notification, make:mail, make:rule, make:request,
+    | make:resource, make:test
+    |
+    */
+
+    'commands' => [
+        'override' => env('MODULAR_COMMANDS_OVERRIDE', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Laravel Octane Support
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for running under Laravel Octane. The package uses static
+    | caching for optimal performance in long-running processes.
+    |
+    | - refresh_on_tick: Set to true to refresh module cache on Octane tick
+    |   events. This is useful if modules are frequently enabled/disabled.
+    |
+    */
+
+    'octane' => [
+        'refresh_on_tick' => env('MODULAR_OCTANE_REFRESH_ON_TICK', false),
+    ],
 
 ];

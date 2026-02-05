@@ -6,6 +6,7 @@ namespace Esegments\ModularArchitecture\Discovery;
 
 use Esegments\ModularArchitecture\Module\Module;
 use Esegments\ModularArchitecture\Module\ModuleCollection;
+use Esegments\ModularArchitecture\Module\ModuleLoader;
 use Illuminate\Support\Facades\Log;
 
 class ModuleDiscovery
@@ -17,6 +18,7 @@ class ModuleDiscovery
     public function __construct(
         protected readonly PathScanner $scanner,
         protected readonly ModuleStateManager $stateManager,
+        protected readonly ?ModuleLoader $loader = null,
     ) {}
 
     public function enableLogging(bool $enable = true): self
@@ -35,7 +37,7 @@ class ModuleDiscovery
             return $this->discovered;
         }
 
-        $this->discovered = new ModuleCollection();
+        $this->discovered = new ModuleCollection;
         $modulePaths = $this->scanner->scan();
 
         foreach ($modulePaths as $path) {
@@ -45,7 +47,7 @@ class ModuleDiscovery
                     $this->discovered->put($module->getName(), $module);
                 }
             } catch (\Exception $e) {
-                $this->logError("Failed to load module at {$path}: " . $e->getMessage());
+                $this->logError("Failed to load module at {$path}: ".$e->getMessage());
             }
         }
 
@@ -60,7 +62,10 @@ class ModuleDiscovery
     protected function loadModule(string $path): ?Module
     {
         try {
-            $module = Module::fromPath($path);
+            // Use injected loader if available, otherwise fallback to static method
+            $module = $this->loader
+                ? $this->loader->load($path)
+                : Module::fromPath($path);
 
             // Apply saved state (enabled/disabled)
             $state = $this->stateManager->getState($module->getName());
@@ -79,7 +84,7 @@ class ModuleDiscovery
 
             return $module;
         } catch (\Exception $e) {
-            $this->logError("Error loading module from {$path}: " . $e->getMessage());
+            $this->logError("Error loading module from {$path}: ".$e->getMessage());
 
             return null;
         }
@@ -133,6 +138,7 @@ class ModuleDiscovery
     public function refresh(): ModuleCollection
     {
         $this->clear();
+        $this->stateManager->reload();
 
         return $this->discover();
     }

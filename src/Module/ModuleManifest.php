@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Esegments\ModularArchitecture\Module;
 
 use Esegments\ModularArchitecture\Exceptions\InvalidManifestException;
+use Esegments\ModularArchitecture\Support\Json;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
 use JsonSerializable;
@@ -71,6 +72,24 @@ final class ModuleManifest implements Arrayable, JsonSerializable
         );
     }
 
+    /**
+     * Create manifest from JSON string.
+     */
+    public static function fromJson(string $json, string $path = ''): self
+    {
+        $data = json_decode($json, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw InvalidManifestException::invalidJson($path, json_last_error_msg());
+        }
+
+        return self::fromArray($data, $path);
+    }
+
+    /**
+     * Create manifest from JSON file path.
+     *
+     * @deprecated Use ModuleLoader for better testability
+     */
     public static function fromJsonFile(string $path): self
     {
         if (! file_exists($path)) {
@@ -82,12 +101,7 @@ final class ModuleManifest implements Arrayable, JsonSerializable
             throw InvalidManifestException::invalidJson($path, 'Could not read file');
         }
 
-        $data = json_decode($content, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw InvalidManifestException::invalidJson($path, json_last_error_msg());
-        }
-
-        return self::fromArray($data, $path);
+        return self::fromJson($content, $path);
     }
 
     /**
@@ -116,9 +130,9 @@ final class ModuleManifest implements Arrayable, JsonSerializable
         return $this->toArray();
     }
 
-    public function toJson(int $options = JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES): string
+    public function toJson(?int $options = null): string
     {
-        return json_encode($this->toArray(), $options) ?: '{}';
+        return json_encode($this->toArray(), $options ?? Json::ENCODE_OPTIONS) ?: '{}';
     }
 
     public function getExtra(string $key, mixed $default = null): mixed

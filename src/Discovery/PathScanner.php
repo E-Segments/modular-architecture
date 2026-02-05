@@ -9,6 +9,9 @@ use Symfony\Component\Finder\Finder;
 
 class PathScanner
 {
+    /** @var array<string, bool> Map for O(1) duplicate checking */
+    protected array $pathsMap = [];
+
     /**
      * @param  array<string>  $paths
      * @param  array<string>  $exclude
@@ -16,7 +19,9 @@ class PathScanner
     public function __construct(
         protected array $paths = [],
         protected array $exclude = ['vendor', 'node_modules', 'tests'],
-    ) {}
+    ) {
+        $this->pathsMap = array_flip($paths);
+    }
 
     /**
      * @param  array<string>  $paths
@@ -24,14 +29,20 @@ class PathScanner
     public function setPaths(array $paths): self
     {
         $this->paths = $paths;
+        $this->pathsMap = array_flip($paths);
 
         return $this;
     }
 
+    /**
+     * Add a path if not already present.
+     * O(1) duplicate check using map.
+     */
     public function addPath(string $path): self
     {
-        if (! in_array($path, $this->paths, true)) {
+        if (! isset($this->pathsMap[$path])) {
             $this->paths[] = $path;
+            $this->pathsMap[$path] = true;
         }
 
         return $this;
@@ -85,7 +96,7 @@ class PathScanner
 
             foreach ($finder as $directory) {
                 $modulePath = $directory->getPathname();
-                $manifestPath = $modulePath . '/module.json';
+                $manifestPath = $modulePath.'/module.json';
 
                 if (file_exists($manifestPath)) {
                     $modules->push($modulePath);
@@ -104,8 +115,8 @@ class PathScanner
     public function findModule(string $name): ?string
     {
         foreach ($this->paths as $basePath) {
-            $modulePath = rtrim($basePath, '/') . '/' . $name;
-            $manifestPath = $modulePath . '/module.json';
+            $modulePath = rtrim($basePath, '/').'/'.$name;
+            $manifestPath = $modulePath.'/module.json';
 
             if (file_exists($manifestPath)) {
                 return $modulePath;

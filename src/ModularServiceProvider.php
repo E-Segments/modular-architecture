@@ -16,72 +16,60 @@ use Esegments\ModularArchitecture\Commands\ListCommand;
 use Esegments\ModularArchitecture\Commands\MakeModuleCommand;
 use Esegments\ModularArchitecture\Commands\OptimizeCommand;
 use Esegments\ModularArchitecture\Commands\OutdatedCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\ControllerMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\EventMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\FactoryMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\JobMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\ListenerMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\MailMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\MigrationMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\ModelMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\NotificationMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\PolicyMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\RequestMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\ResourceMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\RuleMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\SeederMakeCommand;
+use Esegments\ModularArchitecture\Commands\Overrides\TestMakeCommand;
 use Esegments\ModularArchitecture\Commands\RemoveCommand;
 use Esegments\ModularArchitecture\Commands\StatusCommand;
 use Esegments\ModularArchitecture\Commands\StorageMigrateCommand;
 use Esegments\ModularArchitecture\Commands\UpdateCommand;
 use Esegments\ModularArchitecture\Commands\ValidateCommand;
+use Esegments\ModularArchitecture\Contracts\GitHubClientContract;
 use Esegments\ModularArchitecture\Contracts\ModuleStorageContract;
 use Esegments\ModularArchitecture\Discovery\ModuleDiscovery;
 use Esegments\ModularArchitecture\Discovery\ModuleStateManager;
 use Esegments\ModularArchitecture\Discovery\PathScanner;
+use Esegments\ModularArchitecture\GitHub\ArchiveHandler;
 use Esegments\ModularArchitecture\GitHub\GitHubClient;
+use Esegments\ModularArchitecture\GitHub\ModuleBackup;
 use Esegments\ModularArchitecture\GitHub\ModuleInstaller;
+use Esegments\ModularArchitecture\Module\ModuleLoader;
 use Esegments\ModularArchitecture\Registry\ModuleRegistry;
 use Esegments\ModularArchitecture\Resolver\DependencyResolver;
 use Esegments\ModularArchitecture\Scaffolding\ModuleGenerator;
 use Esegments\ModularArchitecture\Scaffolding\StubProcessor;
 use Esegments\ModularArchitecture\Storage\StorageManager;
+use Esegments\ModularArchitecture\Support\OctaneSupport;
 use Esegments\ModularArchitecture\Validation\DependencyValidator;
 use Esegments\ModularArchitecture\Validation\ModuleValidator;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\ServiceProvider;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
 
-class ModularServiceProvider extends ServiceProvider
+class ModularServiceProvider extends PackageServiceProvider
 {
     /**
-     * Register the service provider.
+     * Configure the package using spatie/laravel-package-tools.
      */
-    public function register(): void
+    public function configurePackage(Package $package): void
     {
-        $this->mergeConfigFrom(
-            __DIR__ . '/../config/modular.php',
-            'modular'
-        );
-
-        $this->registerStorage();
-        $this->registerPathScanner();
-        $this->registerStateManager();
-        $this->registerDiscovery();
-        $this->registerResolver();
-        $this->registerRegistry();
-        $this->registerValidators();
-        $this->registerCache();
-        $this->registerScaffolding();
-        $this->registerGitHub();
-        $this->registerModular();
-    }
-
-    /**
-     * Boot the service provider.
-     */
-    public function boot(): void
-    {
-        $this->publishes([
-            __DIR__ . '/../config/modular.php' => config_path('modular.php'),
-        ], 'modular-config');
-
-        $this->publishes([
-            __DIR__ . '/../stubs' => base_path('stubs/modular'),
-        ], 'modular-stubs');
-
-        $this->publishes([
-            __DIR__ . '/../database/migrations/create_modules_table.php.stub' => database_path('migrations/' . date('Y_m_d_His') . '_create_modules_table.php'),
-        ], 'modular-migrations');
-
-        if ($this->app->runningInConsole()) {
-            $this->commands([
+        $package
+            ->name('modular-architecture')
+            ->hasConfigFile('modular')
+            ->hasCommands([
                 MakeModuleCommand::class,
                 ListCommand::class,
                 StatusCommand::class,
@@ -99,12 +87,107 @@ class ModularServiceProvider extends ServiceProvider
                 OutdatedCommand::class,
                 StorageMigrateCommand::class,
             ]);
+
+        // Register publishables
+        $this->publishes([
+            __DIR__.'/../stubs' => base_path('stubs/modular'),
+        ], "{$package->shortName()}-stubs");
+
+        $this->publishes([
+            __DIR__.'/../database/migrations/create_modules_table.php.stub' => database_path('migrations/'.date('Y_m_d_His').'_create_modules_table.php'),
+        ], "{$package->shortName()}-migrations");
+    }
+
+    /**
+     * Register all package services.
+     */
+    public function packageRegistered(): void
+    {
+        $this->registerStorage();
+        $this->registerPathScanner();
+        $this->registerStateManager();
+        $this->registerLoader();
+        $this->registerDiscovery();
+        $this->registerResolver();
+        $this->registerRegistry();
+        $this->registerValidators();
+        $this->registerCache();
+        $this->registerScaffolding();
+        $this->registerGitHub();
+        $this->registerModular();
+    }
+
+    /**
+     * Boot package services.
+     */
+    public function packageBooted(): void
+    {
+        // Register command overrides if enabled
+        if (config('modular.commands.override', true)) {
+            $this->registerCommandOverrides();
         }
 
         // Register module service providers if auto-discovery is enabled
         if (config('modular.discovery.auto', true)) {
             $this->registerModuleProviders();
         }
+
+        // Register Octane listeners if Octane is installed
+        $this->registerOctaneListeners();
+    }
+
+    /**
+     * Register Octane event listeners for cache management.
+     */
+    protected function registerOctaneListeners(): void
+    {
+        if (! class_exists('Laravel\Octane\Events\WorkerStarting')) {
+            return;
+        }
+
+        $this->app['events']->listen(
+            'Laravel\Octane\Events\WorkerStarting',
+            function ($event) {
+                OctaneSupport::warm($this->app);
+            }
+        );
+
+        // Optionally listen for tick events to refresh state periodically
+        if (config('modular.octane.refresh_on_tick', false)) {
+            $this->app['events']->listen(
+                'Laravel\Octane\Events\TickReceived',
+                function ($event) {
+                    OctaneSupport::flush($this->app);
+                }
+            );
+        }
+    }
+
+    /**
+     * Register command overrides for make:* commands with --module support.
+     */
+    protected function registerCommandOverrides(): void
+    {
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        // Override Laravel's make:* commands with module-aware versions
+        $this->app->extend('command.model.make', fn () => $this->app->make(ModelMakeCommand::class));
+        $this->app->extend('command.controller.make', fn () => $this->app->make(ControllerMakeCommand::class));
+        $this->app->extend('command.migrate.make', fn () => $this->app->make(MigrationMakeCommand::class));
+        $this->app->extend('command.seeder.make', fn () => $this->app->make(SeederMakeCommand::class));
+        $this->app->extend('command.factory.make', fn () => $this->app->make(FactoryMakeCommand::class));
+        $this->app->extend('command.policy.make', fn () => $this->app->make(PolicyMakeCommand::class));
+        $this->app->extend('command.event.make', fn () => $this->app->make(EventMakeCommand::class));
+        $this->app->extend('command.listener.make', fn () => $this->app->make(ListenerMakeCommand::class));
+        $this->app->extend('command.job.make', fn () => $this->app->make(JobMakeCommand::class));
+        $this->app->extend('command.notification.make', fn () => $this->app->make(NotificationMakeCommand::class));
+        $this->app->extend('command.mail.make', fn () => $this->app->make(MailMakeCommand::class));
+        $this->app->extend('command.rule.make', fn () => $this->app->make(RuleMakeCommand::class));
+        $this->app->extend('command.request.make', fn () => $this->app->make(RequestMakeCommand::class));
+        $this->app->extend('command.resource.make', fn () => $this->app->make(ResourceMakeCommand::class));
+        $this->app->extend('command.test.make', fn () => $this->app->make(TestMakeCommand::class));
     }
 
     /**
@@ -143,12 +226,22 @@ class ModularServiceProvider extends ServiceProvider
     protected function registerStateManager(): void
     {
         $this->app->singleton(ModuleStateManager::class, function ($app) {
-            $storage = $app->make(ModuleStorageContract::class);
-
             return new ModuleStateManager(
                 files: $app->make(Filesystem::class),
                 stateFile: config('modular.storage.states_file', storage_path('modular/modules_statuses.json')),
                 protectedModules: config('modular.protected', []),
+            );
+        });
+    }
+
+    /**
+     * Register the module loader.
+     */
+    protected function registerLoader(): void
+    {
+        $this->app->singleton(ModuleLoader::class, function ($app) {
+            return new ModuleLoader(
+                files: $app->make(Filesystem::class),
             );
         });
     }
@@ -162,6 +255,7 @@ class ModularServiceProvider extends ServiceProvider
             $discovery = new ModuleDiscovery(
                 scanner: $app->make(PathScanner::class),
                 stateManager: $app->make(ModuleStateManager::class),
+                loader: $app->make(ModuleLoader::class),
             );
 
             if (config('modular.discovery.logging', false)) {
@@ -178,7 +272,7 @@ class ModularServiceProvider extends ServiceProvider
     protected function registerResolver(): void
     {
         $this->app->singleton(DependencyResolver::class, function () {
-            return new DependencyResolver();
+            return new DependencyResolver;
         });
     }
 
@@ -202,7 +296,7 @@ class ModularServiceProvider extends ServiceProvider
     protected function registerValidators(): void
     {
         $this->app->singleton(ModuleValidator::class, function () {
-            return new ModuleValidator();
+            return new ModuleValidator;
         });
 
         $this->app->singleton(DependencyValidator::class, function ($app) {
@@ -237,7 +331,7 @@ class ModularServiceProvider extends ServiceProvider
             // Check for published stubs first, then fall back to package stubs
             $stubPath = is_dir(base_path('stubs/modular'))
                 ? base_path('stubs/modular')
-                : __DIR__ . '/../stubs';
+                : __DIR__.'/../stubs';
 
             return new StubProcessor(
                 files: $app->make(Filesystem::class),
@@ -268,13 +362,31 @@ class ModularServiceProvider extends ServiceProvider
             );
         });
 
+        // Bind interface to implementation
+        $this->app->bind(GitHubClientContract::class, GitHubClient::class);
+
+        $this->app->singleton(ArchiveHandler::class, function ($app) {
+            return new ArchiveHandler(
+                github: $app->make(GitHubClientContract::class),
+                files: $app->make(Filesystem::class),
+                tempPath: config('modular.github.temp_path', storage_path('modular/temp')),
+            );
+        });
+
+        $this->app->singleton(ModuleBackup::class, function ($app) {
+            return new ModuleBackup(
+                files: $app->make(Filesystem::class),
+                backupPath: config('modular.github.backup_path', storage_path('modular/backups')),
+            );
+        });
+
         $this->app->singleton(ModuleInstaller::class, function ($app) {
             return new ModuleInstaller(
-                github: $app->make(GitHubClient::class),
+                github: $app->make(GitHubClientContract::class),
                 files: $app->make(Filesystem::class),
                 pathScanner: $app->make(PathScanner::class),
-                tempPath: config('modular.github.temp_path', storage_path('modular/temp')),
-                backupPath: config('modular.github.backup_path', storage_path('modular/backups')),
+                archiveHandler: $app->make(ArchiveHandler::class),
+                backup: $app->make(ModuleBackup::class),
             );
         });
     }
@@ -314,7 +426,7 @@ class ModularServiceProvider extends ServiceProvider
         } catch (\Exception $e) {
             // Fail silently during boot - log if debug enabled
             if (config('modular.debug', false)) {
-                logger()->error('[Modular] Failed to register module providers: ' . $e->getMessage());
+                logger()->error('[Modular] Failed to register module providers: '.$e->getMessage());
             }
         }
     }
@@ -339,9 +451,13 @@ class ModularServiceProvider extends ServiceProvider
             ModuleGenerator::class,
             StubProcessor::class,
             PathScanner::class,
+            ModuleLoader::class,
             StorageManager::class,
             ModuleStorageContract::class,
             GitHubClient::class,
+            GitHubClientContract::class,
+            ArchiveHandler::class,
+            ModuleBackup::class,
             ModuleInstaller::class,
         ];
     }

@@ -12,13 +12,28 @@ class StorageManager
 {
     protected ?ModuleStorageContract $driver = null;
 
+    /** @var array<string, callable> Custom driver creators */
+    protected array $customCreators = [];
+
     /**
-     * @param array<string, mixed> $config
+     * @param  array<string, mixed>  $config
      */
     public function __construct(
         protected readonly Filesystem $files,
         protected readonly array $config,
     ) {}
+
+    /**
+     * Register a custom driver creator.
+     *
+     * @param  callable(array<string, mixed>): ModuleStorageContract  $callback
+     */
+    public function extend(string $driver, callable $callback): self
+    {
+        $this->customCreators[$driver] = $callback;
+
+        return $this;
+    }
 
     /**
      * Get the storage driver.
@@ -49,6 +64,11 @@ class StorageManager
      */
     protected function resolve(string $name): ModuleStorageContract
     {
+        // Check for custom driver first
+        if (isset($this->customCreators[$name])) {
+            return call_user_func($this->customCreators[$name], $this->config);
+        }
+
         return match ($name) {
             'file', 'filesystem' => $this->createFilesystemDriver(),
             'database', 'db' => $this->createDatabaseDriver(),

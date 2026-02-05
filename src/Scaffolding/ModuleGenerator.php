@@ -7,6 +7,7 @@ namespace Esegments\ModularArchitecture\Scaffolding;
 use Esegments\ModularArchitecture\Discovery\PathScanner;
 use Esegments\ModularArchitecture\Module\Module;
 use Esegments\ModularArchitecture\Module\ModuleManifest;
+use Esegments\ModularArchitecture\Support\Json;
 use Illuminate\Filesystem\Filesystem;
 
 class ModuleGenerator
@@ -30,7 +31,7 @@ class ModuleGenerator
             throw new \RuntimeException('No valid module path configured');
         }
 
-        $modulePath = rtrim($basePath, '/') . '/' . $name;
+        $modulePath = rtrim($basePath, '/').'/'.$name;
 
         if ($this->files->isDirectory($modulePath)) {
             throw new \RuntimeException("Module [{$name}] already exists at {$modulePath}");
@@ -189,7 +190,7 @@ class ModuleGenerator
 
         $this->files->put(
             "{$modulePath}/composer.json",
-            json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+            Json::encode($composer)
         );
     }
 

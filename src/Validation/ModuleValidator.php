@@ -10,89 +10,89 @@ use Esegments\ModularArchitecture\Module\ModuleManifest;
 class ModuleValidator
 {
     /**
-     * @var array<string>
-     */
-    protected array $errors = [];
-
-    /**
-     * @var array<string>
-     */
-    protected array $warnings = [];
-
-    /**
      * Validate a module manifest.
      */
     public function validate(Module $module): ValidationResult
     {
-        $this->errors = [];
-        $this->warnings = [];
+        $errors = [];
+        $warnings = [];
 
         $manifest = $module->getManifestObject();
 
-        $this->validateName($manifest);
-        $this->validateVersion($manifest);
-        $this->validateProviders($module);
-        $this->validatePaths($module);
+        $this->validateName($manifest, $errors, $warnings);
+        $this->validateVersion($manifest, $errors, $warnings);
+        $this->validateProviders($module, $errors);
+        $this->validatePaths($module, $errors);
 
         return new ValidationResult(
-            valid: empty($this->errors),
-            errors: $this->errors,
-            warnings: $this->warnings,
+            valid: empty($errors),
+            errors: $errors,
+            warnings: $warnings,
         );
     }
 
     /**
      * Validate module name.
+     *
+     * @param  array<string>  $errors
+     * @param  array<string>  $warnings
      */
-    protected function validateName(ModuleManifest $manifest): void
+    protected function validateName(ModuleManifest $manifest, array &$errors, array &$warnings): void
     {
         if (empty($manifest->name)) {
-            $this->errors[] = 'Module name is required';
+            $errors[] = 'Module name is required';
 
             return;
         }
 
         if (! preg_match('/^[A-Z][a-zA-Z0-9]*$/', $manifest->name)) {
-            $this->warnings[] = "Module name '{$manifest->name}' should be PascalCase";
+            $warnings[] = "Module name '{$manifest->name}' should be PascalCase";
         }
     }
 
     /**
      * Validate version format.
+     *
+     * @param  array<string>  $errors
+     * @param  array<string>  $warnings
      */
-    protected function validateVersion(ModuleManifest $manifest): void
+    protected function validateVersion(ModuleManifest $manifest, array &$errors, array &$warnings): void
     {
         if (empty($manifest->version)) {
-            $this->errors[] = 'Module version is required';
+            $errors[] = 'Module version is required';
 
             return;
         }
 
         // Basic semver format check
         if (! preg_match('/^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$/', $manifest->version)) {
-            $this->warnings[] = "Version '{$manifest->version}' doesn't follow semver format (x.y.z)";
+            $warnings[] = "Version '{$manifest->version}' doesn't follow semver format (x.y.z)";
         }
     }
 
     /**
      * Validate service providers exist.
+     *
+     * @param  array<string>  $errors
      */
-    protected function validateProviders(Module $module): void
+    protected function validateProviders(Module $module, array &$errors): void
     {
         foreach ($module->getProviders() as $provider) {
             if (! class_exists($provider)) {
-                $this->errors[] = "Service provider class not found: {$provider}";
+                $errors[] = "Service provider class not found: {$provider}";
             }
         }
     }
 
     /**
      * Validate expected paths exist.
+     *
+     * @param  array<string>  $errors
      */
-    protected function validatePaths(Module $module): void
+    protected function validatePaths(Module $module, array &$errors): void
     {
         if (! is_dir($module->getPath())) {
-            $this->errors[] = "Module path does not exist: {$module->getPath()}";
+            $errors[] = "Module path does not exist: {$module->getPath()}";
         }
     }
 

@@ -4,23 +4,25 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture\GitHub;
 
+use Esegments\ModularArchitecture\Contracts\GitHubClientContract;
 use Esegments\ModularArchitecture\Discovery\PathScanner;
 use Esegments\ModularArchitecture\Exceptions\ModuleNotFoundException;
 use Esegments\ModularArchitecture\Module\Module;
-use Esegments\ModularArchitecture\Module\ModuleManifest;
+use Esegments\ModularArchitecture\Support\Json;
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
-use ZipArchive;
 
+/**
+ * Orchestrates module installation from GitHub.
+ */
 class ModuleInstaller
 {
     public function __construct(
-        protected readonly GitHubClient $github,
+        protected readonly GitHubClientContract $github,
         protected readonly Filesystem $files,
         protected readonly PathScanner $pathScanner,
-        protected readonly string $tempPath,
-        protected readonly string $backupPath,
+        protected readonly ArchiveHandler $archiveHandler,
+        protected readonly ModuleBackup $backup,
     ) {}
 
     /**
@@ -53,18 +55,31 @@ class ModuleInstaller
         }
 
         $moduleName = $moduleJson['name'] ?? $repo;
+        $installPath = $this->pathScanner->getDefaultPath().'/'.$moduleName;
 
-        // Download archive
-        $archivePath = $this->download($owner, $repo, $ref);
+        // Check if module already exists
+        if ($this->files->isDirectory($installPath)) {
+            throw new RuntimeException("Module [{$moduleName}] already exists at {$installPath}");
+        }
 
-        // Extract and install
-        $installPath = $this->extract($archivePath, $moduleName);
+        // Download and extract
+        $archivePath = $this->archiveHandler->download($owner, $repo, $ref);
 
-        // Clean up download
-        $this->files->delete($archivePath);
+        try {
+            $this->archiveHandler->extract($archivePath, $installPath);
+        } finally {
+            $this->archiveHandler->cleanup($archivePath);
+        }
 
         // Load the installed module
         $module = Module::fromPath($installPath);
+
+        // Save metadata
+        $this->saveMetadata($installPath, [
+            'source' => "{$owner}/{$repo}",
+            'version' => $ref,
+            'installed_at' => now()->toIso8601String(),
+        ]);
 
         return new InstallResult(
             success: true,
@@ -86,8 +101,6 @@ class ModuleInstaller
             throw new ModuleNotFoundException($moduleName);
         }
 
-        // Get current module info
-        $currentModule = Module::fromPath($modulePath);
         $metadata = $this->getInstalledMetadata($moduleName);
 
         if (! isset($metadata['source'])) {
@@ -100,7 +113,7 @@ class ModuleInstaller
         }
 
         // Backup current module
-        $this->backup($moduleName, $modulePath);
+        $this->backup->backup($moduleName, $modulePath);
 
         try {
             // Remove current module
@@ -110,7 +123,7 @@ class ModuleInstaller
             return $this->install($metadata['source'], $version);
         } catch (\Exception $e) {
             // Restore from backup on failure
-            $this->restore($moduleName, $modulePath);
+            $this->backup->restore($moduleName, $modulePath);
             throw $e;
         }
     }
@@ -194,125 +207,22 @@ class ModuleInstaller
     }
 
     /**
-     * Download repository archive.
-     */
-    protected function download(string $owner, string $repo, string $ref): string
-    {
-        $this->files->ensureDirectoryExists($this->tempPath);
-
-        $filename = "{$owner}-{$repo}-" . md5($ref) . '.zip';
-        $filepath = "{$this->tempPath}/{$filename}";
-
-        // Get download URL
-        if (str_starts_with($ref, 'v') || preg_match('/^\d+\.\d+/', $ref)) {
-            $url = $this->github->getReleaseArchiveUrl($owner, $repo, $ref);
-        } else {
-            $url = $this->github->getArchiveUrl($owner, $repo, $ref);
-        }
-
-        $response = Http::timeout(120)
-            ->withOptions(['sink' => $filepath])
-            ->get($url);
-
-        if (! $response->successful()) {
-            throw new RuntimeException("Failed to download module archive: HTTP {$response->status()}");
-        }
-
-        return $filepath;
-    }
-
-    /**
-     * Extract archive and install module.
-     */
-    protected function extract(string $archivePath, string $moduleName): string
-    {
-        $zip = new ZipArchive();
-        $result = $zip->open($archivePath);
-
-        if ($result !== true) {
-            throw new RuntimeException("Failed to open archive: error code {$result}");
-        }
-
-        // Extract to temp directory first
-        $extractPath = "{$this->tempPath}/extract-" . uniqid();
-        $this->files->ensureDirectoryExists($extractPath);
-
-        $zip->extractTo($extractPath);
-        $zip->close();
-
-        // Find the extracted folder (GitHub archives have a root folder)
-        $extracted = $this->files->directories($extractPath);
-        if (empty($extracted)) {
-            throw new RuntimeException('Archive is empty or invalid');
-        }
-
-        $sourcePath = $extracted[0];
-
-        // Determine install path
-        $installPath = $this->pathScanner->getDefaultPath() . '/' . $moduleName;
-
-        // Check if module already exists
-        if ($this->files->isDirectory($installPath)) {
-            throw new RuntimeException("Module [{$moduleName}] already exists at {$installPath}");
-        }
-
-        // Move to modules directory
-        $this->files->moveDirectory($sourcePath, $installPath);
-
-        // Clean up extract directory
-        $this->files->deleteDirectory($extractPath);
-
-        return $installPath;
-    }
-
-    /**
-     * Backup a module before update.
-     */
-    protected function backup(string $moduleName, string $modulePath): string
-    {
-        $this->files->ensureDirectoryExists($this->backupPath);
-
-        $backupName = "{$moduleName}-" . date('Y-m-d-His');
-        $backupFullPath = "{$this->backupPath}/{$backupName}";
-
-        $this->files->copyDirectory($modulePath, $backupFullPath);
-
-        return $backupFullPath;
-    }
-
-    /**
-     * Restore a module from backup.
-     */
-    protected function restore(string $moduleName, string $targetPath): void
-    {
-        // Find most recent backup
-        $backups = $this->files->directories($this->backupPath);
-        $moduleBackups = array_filter($backups, fn ($path) => str_starts_with(basename($path), $moduleName));
-
-        if (empty($moduleBackups)) {
-            throw new RuntimeException("No backup found for module [{$moduleName}]");
-        }
-
-        // Sort by name (which includes timestamp)
-        rsort($moduleBackups);
-        $latestBackup = $moduleBackups[0];
-
-        // Restore
-        $this->files->copyDirectory($latestBackup, $targetPath);
-    }
-
-    /**
      * Get installed module metadata.
      */
     protected function getInstalledMetadata(string $moduleName): array
     {
-        $metadataFile = $this->pathScanner->findModule($moduleName) . '/.modular-metadata.json';
+        $modulePath = $this->pathScanner->findModule($moduleName);
+        if (! $modulePath) {
+            return [];
+        }
+
+        $metadataFile = $modulePath.'/.modular-metadata.json';
 
         if (! $this->files->exists($metadataFile)) {
             return [];
         }
 
-        return json_decode($this->files->get($metadataFile), true) ?? [];
+        return Json::decode($this->files->get($metadataFile)) ?? [];
     }
 
     /**
@@ -320,11 +230,11 @@ class ModuleInstaller
      */
     public function saveMetadata(string $modulePath, array $metadata): void
     {
-        $metadataFile = rtrim($modulePath, '/') . '/.modular-metadata.json';
+        $metadataFile = rtrim($modulePath, '/').'/.modular-metadata.json';
 
         $this->files->put(
             $metadataFile,
-            json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+            Json::encode($metadata)
         );
     }
 }

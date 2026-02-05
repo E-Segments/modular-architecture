@@ -68,8 +68,15 @@ class ValidateCommand extends Command
         $hasErrors = false;
         $hasWarnings = false;
 
-        foreach ($modular->all() as $module) {
-            $result = $modular->validate($module->getName());
+        // Use batch validation for efficiency - builds module map once
+        $results = $modular->validateAllPerModule();
+        $modules = $modular->all();
+
+        foreach ($modules as $module) {
+            $result = $results[$module->getName()] ?? null;
+            if (! $result) {
+                continue;
+            }
 
             $status = match (true) {
                 ! $result->isValid() => '<fg=red>✗</>',
@@ -78,8 +85,6 @@ class ValidateCommand extends Command
             };
 
             $version = $module->getVersion();
-            $deps = array_keys($module->getRequires());
-            $depsStr = empty($deps) ? '-' : implode(', ', $deps);
 
             $this->line("{$status} {$module->getName()} v{$version}");
 

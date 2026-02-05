@@ -20,13 +20,13 @@ class DependencyValidatorTest extends TestCase
         parent::setUp();
 
         $this->validator = new DependencyValidator(
-            resolver: new DependencyResolver()
+            resolver: new DependencyResolver
         );
     }
 
     public function test_validates_satisfied_dependencies(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('Core', $this->createModule('Core', '1.0.0'));
         $collection->put('Blog', $this->createModule('Blog', '1.0.0', ['Core' => '^1.0']));
 
@@ -38,7 +38,7 @@ class DependencyValidatorTest extends TestCase
 
     public function test_detects_missing_dependency(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('Blog', $this->createModule('Blog', '1.0.0', ['Core' => '^1.0']));
 
         $result = $this->validator->validate($collection);
@@ -51,7 +51,7 @@ class DependencyValidatorTest extends TestCase
 
     public function test_detects_version_mismatch(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('Core', $this->createModule('Core', '0.5.0'));
         $collection->put('Blog', $this->createModule('Blog', '1.0.0', ['Core' => '^1.0']));
 
@@ -64,7 +64,7 @@ class DependencyValidatorTest extends TestCase
 
     public function test_warns_about_disabled_dependency(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $core = $this->createModule('Core', '1.0.0');
         $core->disable();
         $collection->put('Core', $core);
@@ -78,7 +78,7 @@ class DependencyValidatorTest extends TestCase
 
     public function test_can_enable_module_with_satisfied_dependencies(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('Core', $this->createModule('Core', '1.0.0'));
         $blog = $this->createModule('Blog', '1.0.0', ['Core' => '^1.0']);
         $blog->disable();
@@ -90,7 +90,7 @@ class DependencyValidatorTest extends TestCase
 
     public function test_cannot_enable_module_with_missing_dependencies(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $blog = $this->createModule('Blog', '1.0.0', ['Core' => '^1.0']);
         $blog->disable();
 
@@ -102,7 +102,7 @@ class DependencyValidatorTest extends TestCase
 
     public function test_cannot_disable_module_with_dependents(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('Core', $this->createModule('Core', '1.0.0'));
         $collection->put('Blog', $this->createModule('Blog', '1.0.0', ['Core' => '^1.0']));
 
@@ -115,7 +115,7 @@ class DependencyValidatorTest extends TestCase
 
     public function test_can_disable_module_without_dependents(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('Core', $this->createModule('Core', '1.0.0'));
         $collection->put('Blog', $this->createModule('Blog', '1.0.0'));
 
@@ -127,7 +127,7 @@ class DependencyValidatorTest extends TestCase
 
     public function test_cannot_disable_protected_module(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $core = $this->createModule('Core', '1.0.0');
         $core->setProtected(true);
         $collection->put('Core', $core);
@@ -144,9 +144,17 @@ class DependencyValidatorTest extends TestCase
         $this->assertTrue($this->validator->satisfiesConstraint('1.5.0', '^1.0'));
         $this->assertFalse($this->validator->satisfiesConstraint('2.0.0', '^1.0'));
 
+        // ~1.5 means >=1.5.0 <2.0.0 in Composer semver
         $this->assertTrue($this->validator->satisfiesConstraint('1.5.0', '~1.5'));
         $this->assertTrue($this->validator->satisfiesConstraint('1.5.9', '~1.5'));
-        $this->assertFalse($this->validator->satisfiesConstraint('1.6.0', '~1.5'));
+        $this->assertTrue($this->validator->satisfiesConstraint('1.6.0', '~1.5'));
+        $this->assertTrue($this->validator->satisfiesConstraint('1.9.9', '~1.5'));
+        $this->assertFalse($this->validator->satisfiesConstraint('2.0.0', '~1.5'));
+
+        // ~1.5.0 means >=1.5.0 <1.6.0
+        $this->assertTrue($this->validator->satisfiesConstraint('1.5.0', '~1.5.0'));
+        $this->assertTrue($this->validator->satisfiesConstraint('1.5.9', '~1.5.0'));
+        $this->assertFalse($this->validator->satisfiesConstraint('1.6.0', '~1.5.0'));
 
         $this->assertTrue($this->validator->satisfiesConstraint('2.0.0', '>=2.0 <3.0'));
         $this->assertTrue($this->validator->satisfiesConstraint('2.9.9', '>=2.0 <3.0'));
@@ -158,7 +166,7 @@ class DependencyValidatorTest extends TestCase
 
     protected function createModule(string $name, string $version, array $requires = []): Module
     {
-        $path = $this->getTestModulesPath() . '/' . $name;
+        $path = $this->getTestModulesPath().'/'.$name;
         $this->app['files']->ensureDirectoryExists($path);
 
         $manifest = new ModuleManifest(
@@ -169,7 +177,7 @@ class DependencyValidatorTest extends TestCase
         );
 
         $this->app['files']->put(
-            $path . '/module.json',
+            $path.'/module.json',
             $manifest->toJson()
         );
 

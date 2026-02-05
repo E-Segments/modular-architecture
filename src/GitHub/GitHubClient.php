@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture\GitHub;
 
+use Esegments\ModularArchitecture\Contracts\GitHubClientContract;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
-class GitHubClient
+class GitHubClient implements GitHubClientContract
 {
     protected const BASE_URL = 'https://api.github.com';
 
@@ -24,7 +25,7 @@ class GitHubClient
     public function getRepository(string $owner, string $repo): ?array
     {
         $response = $this->request()
-            ->get(self::BASE_URL . "/repos/{$owner}/{$repo}");
+            ->get(self::BASE_URL."/repos/{$owner}/{$repo}");
 
         return $response->successful() ? $response->json() : null;
     }
@@ -35,7 +36,7 @@ class GitHubClient
     public function getReleases(string $owner, string $repo, int $perPage = 10): array
     {
         $response = $this->request()
-            ->get(self::BASE_URL . "/repos/{$owner}/{$repo}/releases", [
+            ->get(self::BASE_URL."/repos/{$owner}/{$repo}/releases", [
                 'per_page' => $perPage,
             ]);
 
@@ -48,7 +49,7 @@ class GitHubClient
     public function getLatestRelease(string $owner, string $repo): ?array
     {
         $response = $this->request()
-            ->get(self::BASE_URL . "/repos/{$owner}/{$repo}/releases/latest");
+            ->get(self::BASE_URL."/repos/{$owner}/{$repo}/releases/latest");
 
         return $response->successful() ? $response->json() : null;
     }
@@ -59,7 +60,7 @@ class GitHubClient
     public function getReleaseByTag(string $owner, string $repo, string $tag): ?array
     {
         $response = $this->request()
-            ->get(self::BASE_URL . "/repos/{$owner}/{$repo}/releases/tags/{$tag}");
+            ->get(self::BASE_URL."/repos/{$owner}/{$repo}/releases/tags/{$tag}");
 
         return $response->successful() ? $response->json() : null;
     }
@@ -70,7 +71,7 @@ class GitHubClient
     public function getTags(string $owner, string $repo, int $perPage = 30): array
     {
         $response = $this->request()
-            ->get(self::BASE_URL . "/repos/{$owner}/{$repo}/tags", [
+            ->get(self::BASE_URL."/repos/{$owner}/{$repo}/tags", [
                 'per_page' => $perPage,
             ]);
 
@@ -94,7 +95,7 @@ class GitHubClient
     {
         $response = $this->request()
             ->withOptions(['allow_redirects' => true])
-            ->get(self::BASE_URL . "/repos/{$owner}/{$repo}/zipball/{$ref}");
+            ->get(self::BASE_URL."/repos/{$owner}/{$repo}/zipball/{$ref}");
 
         return $response->successful() ? $response : null;
     }
@@ -121,7 +122,7 @@ class GitHubClient
     public function getFileContents(string $owner, string $repo, string $path, string $ref = 'main'): ?string
     {
         $response = $this->request()
-            ->get(self::BASE_URL . "/repos/{$owner}/{$repo}/contents/{$path}", [
+            ->get(self::BASE_URL."/repos/{$owner}/{$repo}/contents/{$path}", [
                 'ref' => $ref,
             ]);
 
@@ -166,7 +167,7 @@ class GitHubClient
     public function searchRepositories(string $query, int $perPage = 10): array
     {
         $response = $this->request()
-            ->get(self::BASE_URL . '/search/repositories', [
+            ->get(self::BASE_URL.'/search/repositories', [
                 'q' => $query,
                 'per_page' => $perPage,
             ]);
@@ -180,7 +181,7 @@ class GitHubClient
     public function getRateLimit(): array
     {
         $response = $this->request()
-            ->get(self::BASE_URL . '/rate_limit');
+            ->get(self::BASE_URL.'/rate_limit');
 
         return $response->successful() ? $response->json() : [];
     }

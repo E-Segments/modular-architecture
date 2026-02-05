@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Esegments\ModularArchitecture\Commands;
 
 use Esegments\ModularArchitecture\Modular;
+use Esegments\ModularArchitecture\Module\Module;
 use Illuminate\Console\Command;
 
 class StatusCommand extends Command
@@ -26,18 +27,15 @@ class StatusCommand extends Command
 
     protected function showOverview(Modular $modular): int
     {
-        $all = $modular->all();
-        $enabled = $modular->enabled();
-        $disabled = $modular->disabled();
+        $stats = $modular->stats();
 
         $this->components->info('Module Overview');
+
         $this->newLine();
-
-        $this->components->twoColumnDetail('Total Modules', (string) $all->count());
-        $this->components->twoColumnDetail('Enabled', "<fg=green>{$enabled->count()}</>");
-        $this->components->twoColumnDetail('Disabled', "<fg=yellow>{$disabled->count()}</>");
-        $this->components->twoColumnDetail('Protected', (string) $all->protected()->count());
-
+        $this->line("  Total Modules:     <fg=cyan>{$stats['total']}</>");
+        $this->line("  Enabled:           <fg=green>{$stats['enabled']}</>");
+        $this->line("  Disabled:          <fg=yellow>{$stats['disabled']}</>");
+        $this->line("  Protected:         <fg=blue>{$stats['protected']}</>");
         $this->newLine();
 
         // Validate all modules
@@ -47,20 +45,37 @@ class StatusCommand extends Command
             $this->components->info('✓ All modules are valid');
         } else {
             $this->components->error('✗ Validation errors found');
-            foreach ($result->errors as $error) {
-                $this->components->bulletList([$error]);
+            foreach ($result->errors as $err) {
+                $this->line("  • {$err}");
             }
         }
 
         if ($result->hasWarnings()) {
             $this->newLine();
             $this->components->warn('Warnings:');
-            foreach ($result->warnings as $warning) {
-                $this->components->bulletList([$warning]);
+            foreach ($result->warnings as $warn) {
+                $this->line("  • {$warn}");
             }
         }
 
-        return Command::SUCCESS;
+        // Show quick status table
+        $this->newLine();
+
+        $headers = ['Module', 'Version', 'Enabled', 'Protected'];
+        $rows = $modular->all()
+            ->sortByName()
+            ->map(fn (Module $module) => [
+                $module->getName(),
+                $module->getVersion(),
+                $module->isEnabled() ? '✓' : '○',
+                $module->isProtected() ? '🔒' : '-',
+            ])
+            ->values()
+            ->all();
+
+        $this->table($headers, $rows);
+
+        return self::SUCCESS;
     }
 
     protected function showModuleStatus(Modular $modular, string $name): int
@@ -68,60 +83,66 @@ class StatusCommand extends Command
         $module = $modular->find($name);
 
         if (! $module) {
-            $this->components->error("Module [{$name}] not found.");
+            $this->components->error("Module '{$name}' not found.");
 
-            return Command::FAILURE;
+            return self::FAILURE;
         }
 
         $this->components->info("Module: {$module->getName()}");
-        $this->newLine();
 
-        $this->components->twoColumnDetail('Version', $module->getVersion());
-        $this->components->twoColumnDetail('Description', $module->getDescription() ?: '-');
-        $this->components->twoColumnDetail('Path', $module->getPath());
-        $this->components->twoColumnDetail('Namespace', $module->getNamespace());
-        $this->components->twoColumnDetail('Priority', (string) $module->getPriority());
-        $this->components->twoColumnDetail(
-            'Status',
-            $module->isEnabled() ? '<fg=green>Enabled</>' : '<fg=yellow>Disabled</>'
-        );
-        $this->components->twoColumnDetail(
-            'Protected',
-            $module->isProtected() ? '<fg=blue>Yes</>' : 'No'
-        );
+        $this->newLine();
+        $this->line("  Version:     {$module->getVersion()}");
+        $this->line("  Alias:       {$module->getAlias()}");
+        $this->line('  Description: '.($module->getDescription() ?: '-'));
+        $this->line("  Path:        {$module->getPath()}");
+        $this->line("  Namespace:   {$module->getNamespace()}");
+        $this->line("  Priority:    {$module->getPriority()}");
+        $this->line('  Status:      '.($module->isEnabled() ? '<fg=green>Enabled</>' : '<fg=yellow>Disabled</>'));
+        $this->line('  Protected:   '.($module->isProtected() ? '<fg=blue>Yes</>' : 'No'));
 
         // Dependencies
+        $this->newLine();
+        $this->line('  <fg=cyan>Dependencies:</>');
+
         $requires = $module->getRequires();
-        if (! empty($requires)) {
-            $this->newLine();
-            $this->components->info('Dependencies:');
+        if (empty($requires)) {
+            $this->line('    None');
+        } else {
             foreach ($requires as $dep => $constraint) {
                 $depModule = $modular->find($dep);
                 $status = $depModule
                     ? ($depModule->isEnabled() ? '<fg=green>✓</>' : '<fg=yellow>○</>')
                     : '<fg=red>✗</>';
-                $this->components->twoColumnDetail("  {$dep}", "{$constraint} {$status}");
+                $this->line("    {$status} {$dep} {$constraint}");
             }
         }
 
         // Dependents
+        $this->newLine();
+        $this->line('  <fg=cyan>Depended on by:</>');
+
         $dependents = $modular->getDependents($name);
-        if ($dependents->isNotEmpty()) {
-            $this->newLine();
-            $this->components->info('Depended on by:');
+        if ($dependents->isEmpty()) {
+            $this->line('    None');
+        } else {
             foreach ($dependents as $dependent) {
-                $this->components->bulletList([$dependent->getName()]);
+                $status = $dependent->isEnabled() ? '<fg=green>✓</>' : '<fg=yellow>○</>';
+                $this->line("    {$status} {$dependent->getName()}");
             }
         }
 
         // Providers
+        $this->newLine();
+        $this->line('  <fg=cyan>Service Providers:</>');
+
         $providers = $module->getProviders();
-        if (! empty($providers)) {
-            $this->newLine();
-            $this->components->info('Service Providers:');
+        if (empty($providers)) {
+            $this->line('    None');
+        } else {
             foreach ($providers as $provider) {
-                $exists = class_exists($provider) ? '<fg=green>✓</>' : '<fg=red>✗</>';
-                $this->components->bulletList(["{$provider} {$exists}"]);
+                $exists = class_exists($provider);
+                $status = $exists ? '<fg=green>✓</>' : '<fg=red>✗</>';
+                $this->line("    {$status} {$provider}");
             }
         }
 
@@ -132,11 +153,11 @@ class StatusCommand extends Command
             $this->components->info('✓ Module is valid');
         } else {
             $this->components->error('✗ Validation errors:');
-            foreach ($result->errors as $error) {
-                $this->components->bulletList([$error]);
+            foreach ($result->errors as $err) {
+                $this->line("  • {$err}");
             }
         }
 
-        return Command::SUCCESS;
+        return self::SUCCESS;
     }
 }

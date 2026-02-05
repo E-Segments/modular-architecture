@@ -178,15 +178,36 @@ class Modular
     public function validateAll(): ValidationResult
     {
         $result = new ValidationResult(true);
+        $allModules = $this->all(); // Cache to avoid multiple discover() calls
 
-        foreach ($this->all() as $module) {
+        foreach ($allModules as $module) {
             $moduleResult = $this->moduleValidator->validate($module);
             $result = $result->merge($moduleResult);
         }
 
-        $depResult = $this->dependencyValidator->validate($this->all());
+        $depResult = $this->dependencyValidator->validate($allModules);
 
         return $result->merge($depResult);
+    }
+
+    /**
+     * Validate all modules and return per-module results.
+     * More efficient than calling validate() in a loop as module map is built once.
+     *
+     * @return array<string, ValidationResult>
+     */
+    public function validateAllPerModule(): array
+    {
+        $allModules = $this->all();
+        $results = [];
+
+        foreach ($allModules as $module) {
+            $moduleResult = $this->moduleValidator->validate($module);
+            $depResult = $this->dependencyValidator->validateModule($module, $allModules);
+            $results[$module->getName()] = $moduleResult->merge($depResult);
+        }
+
+        return $results;
     }
 
     /**
@@ -273,5 +294,22 @@ class Modular
     public function enabledCount(): int
     {
         return $this->registry->enabledCount();
+    }
+
+    /**
+     * Get module statistics.
+     *
+     * @return array{total: int, enabled: int, disabled: int, protected: int}
+     */
+    public function stats(): array
+    {
+        $all = $this->all();
+
+        return [
+            'total' => $all->count(),
+            'enabled' => $all->enabled()->count(),
+            'disabled' => $all->disabled()->count(),
+            'protected' => $all->protected()->count(),
+        ];
     }
 }

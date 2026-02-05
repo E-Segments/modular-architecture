@@ -26,12 +26,15 @@ class DependencyValidator
         // Check for circular dependencies
         $cycles = $this->resolver->detectCycles($modules);
         foreach ($cycles as $cycle) {
-            $errors[] = 'Circular dependency detected: ' . implode(' → ', $cycle);
+            $errors[] = 'Circular dependency detected: '.implode(' → ', $cycle);
         }
+
+        // Pre-index modules by name for O(1) lookups
+        $moduleMap = $this->buildModuleMap($modules);
 
         // Check each module's dependencies
         foreach ($modules as $module) {
-            $result = $this->validateModule($module, $modules);
+            $result = $this->validateModuleWithMap($module, $moduleMap);
             $errors = array_merge($errors, $result->errors);
             $warnings = array_merge($warnings, $result->warnings);
         }
@@ -48,12 +51,22 @@ class DependencyValidator
      */
     public function validateModule(Module $module, ModuleCollection $allModules): ValidationResult
     {
+        $moduleMap = $this->buildModuleMap($allModules);
+
+        return $this->validateModuleWithMap($module, $moduleMap);
+    }
+
+    /**
+     * Validate dependencies for a single module using pre-built map.
+     */
+    protected function validateModuleWithMap(Module $module, ModuleCollection $moduleMap): ValidationResult
+    {
         $errors = [];
         $warnings = [];
 
         // Check required dependencies
         foreach ($module->getRequires() as $depName => $constraint) {
-            $dependency = $allModules->findByName($depName);
+            $dependency = $moduleMap->get($depName);
 
             if (! $dependency) {
                 $errors[] = "[{$module->getName()}] requires [{$depName}] which is not installed";
@@ -75,7 +88,7 @@ class DependencyValidator
 
         // Check conflicts
         foreach ($module->getConflicts() as $conflictName => $constraint) {
-            $conflict = $allModules->findByName($conflictName);
+            $conflict = $moduleMap->get($conflictName);
 
             if ($conflict && $conflict->isEnabled()) {
                 if ($this->satisfiesConstraint($conflict->getVersion(), $constraint)) {
@@ -89,6 +102,15 @@ class DependencyValidator
             errors: $errors,
             warnings: $warnings,
         );
+    }
+
+    /**
+     * Get module map indexed by name for O(1) lookups.
+     * ModuleCollection is already keyed by name, so we return it directly.
+     */
+    protected function buildModuleMap(ModuleCollection $modules): ModuleCollection
+    {
+        return $modules;
     }
 
     /**
@@ -116,10 +138,11 @@ class DependencyValidator
     {
         $errors = [];
         $warnings = [];
+        $moduleMap = $this->buildModuleMap($allModules);
 
         // Check dependencies are enabled
         foreach (array_keys($module->getRequires()) as $depName) {
-            $dependency = $allModules->findByName($depName);
+            $dependency = $moduleMap->get($depName);
 
             if (! $dependency) {
                 $errors[] = "Required module [{$depName}] is not installed";
@@ -130,7 +153,7 @@ class DependencyValidator
 
         // Check for conflicts
         foreach ($module->getConflicts() as $conflictName => $constraint) {
-            $conflict = $allModules->findByName($conflictName);
+            $conflict = $moduleMap->get($conflictName);
 
             if ($conflict && $conflict->isEnabled()) {
                 if ($this->satisfiesConstraint($conflict->getVersion(), $constraint)) {
@@ -164,7 +187,7 @@ class DependencyValidator
         $dependents = $allModules->dependingOn($module->getName())->enabled();
 
         if ($dependents->isNotEmpty()) {
-            $errors[] = 'The following modules depend on this module: ' . implode(', ', $dependents->names());
+            $errors[] = 'The following modules depend on this module: '.implode(', ', $dependents->names());
         }
 
         return new ValidationResult(

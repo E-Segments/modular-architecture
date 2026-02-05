@@ -73,9 +73,9 @@ class ModularTest extends TestCase
     {
         $this->createTestModule('Blog');
         $this->createTestModule('Products');
+        Modular::refresh(); // Refresh to discover new modules
 
         Modular::disable('Products');
-        Modular::refresh();
 
         $enabled = Modular::enabled();
 
@@ -88,9 +88,9 @@ class ModularTest extends TestCase
     {
         $this->createTestModule('Blog');
         $this->createTestModule('Products');
+        Modular::refresh(); // Refresh to discover new modules
 
         Modular::disable('Products');
-        Modular::refresh();
 
         $disabled = Modular::disabled();
 
@@ -101,6 +101,7 @@ class ModularTest extends TestCase
     public function test_can_validate_module(): void
     {
         $this->createTestModule('Blog');
+        Modular::refresh();
 
         $result = Modular::validate('Blog');
 
@@ -112,6 +113,7 @@ class ModularTest extends TestCase
         $this->createTestModule('Blog', [
             'requires' => ['NonExistent' => '^1.0'],
         ]);
+        Modular::refresh();
 
         $result = Modular::validate('Blog');
 

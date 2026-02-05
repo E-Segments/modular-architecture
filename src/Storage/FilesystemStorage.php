@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Esegments\ModularArchitecture\Storage;
 
 use Esegments\ModularArchitecture\Contracts\ModuleStorageContract;
+use Esegments\ModularArchitecture\Support\Json;
 use Illuminate\Filesystem\Filesystem;
 
 class FilesystemStorage implements ModuleStorageContract
@@ -112,56 +113,51 @@ class FilesystemStorage implements ModuleStorageContract
 
     protected function loadStates(): void
     {
-        if ($this->statesLoaded) {
-            return;
+        if (! $this->statesLoaded) {
+            $this->states = $this->loadFromFile($this->statesFile);
+            $this->statesLoaded = true;
         }
-
-        if ($this->files->exists($this->statesFile)) {
-            $content = $this->files->get($this->statesFile);
-            $data = json_decode($content, true);
-
-            if (is_array($data)) {
-                $this->states = $data;
-            }
-        }
-
-        $this->statesLoaded = true;
     }
 
     protected function saveStates(): void
     {
-        $this->files->ensureDirectoryExists(dirname($this->statesFile));
-        $this->files->put(
-            $this->statesFile,
-            json_encode($this->states, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
-        );
+        $this->saveToFile($this->statesFile, $this->states);
     }
 
     protected function loadMetadata(): void
     {
-        if ($this->metadataLoaded) {
-            return;
+        if (! $this->metadataLoaded) {
+            $this->metadata = $this->loadFromFile($this->metadataFile);
+            $this->metadataLoaded = true;
         }
-
-        if ($this->files->exists($this->metadataFile)) {
-            $content = $this->files->get($this->metadataFile);
-            $data = json_decode($content, true);
-
-            if (is_array($data)) {
-                $this->metadata = $data;
-            }
-        }
-
-        $this->metadataLoaded = true;
     }
 
     protected function saveMetadata(): void
     {
-        $this->files->ensureDirectoryExists(dirname($this->metadataFile));
-        $this->files->put(
-            $this->metadataFile,
-            json_encode($this->metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
-        );
+        $this->saveToFile($this->metadataFile, $this->metadata);
+    }
+
+    /**
+     * Load array data from a JSON file.
+     */
+    protected function loadFromFile(string $path): array
+    {
+        if (! $this->files->exists($path)) {
+            return [];
+        }
+
+        $data = Json::decode($this->files->get($path));
+
+        return is_array($data) ? $data : [];
+    }
+
+    /**
+     * Save array data to a JSON file.
+     */
+    protected function saveToFile(string $path, array $data): void
+    {
+        $this->files->ensureDirectoryExists(dirname($path));
+        $this->files->put($path, Json::encode($data));
     }
 
     /**

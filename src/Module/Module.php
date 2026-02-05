@@ -40,7 +40,7 @@ class Module implements Arrayable, JsonSerializable, ModuleContract
 
     public static function fromPath(string $path): self
     {
-        $manifestPath = rtrim($path, '/') . '/module.json';
+        $manifestPath = rtrim($path, '/').'/module.json';
 
         if (! file_exists($manifestPath)) {
             throw InvalidManifestException::notFound($manifestPath);
@@ -169,46 +169,44 @@ class Module implements Arrayable, JsonSerializable, ModuleContract
         return $this;
     }
 
+    /**
+     * Build a path within the module directory.
+     */
+    protected function buildPath(string $segment, ?string $subPath = null): string
+    {
+        $base = $this->path.'/'.$segment;
+
+        return $subPath ? $base.'/'.ltrim($subPath, '/') : $base;
+    }
+
     public function getAppPath(?string $subPath = null): string
     {
-        $base = $this->path . '/app';
-
-        return $subPath ? $base . '/' . ltrim($subPath, '/') : $base;
+        return $this->buildPath('app', $subPath);
     }
 
     public function getConfigPath(?string $subPath = null): string
     {
-        $base = $this->path . '/config';
-
-        return $subPath ? $base . '/' . ltrim($subPath, '/') : $base;
+        return $this->buildPath('config', $subPath);
     }
 
     public function getDatabasePath(?string $subPath = null): string
     {
-        $base = $this->path . '/database';
-
-        return $subPath ? $base . '/' . ltrim($subPath, '/') : $base;
+        return $this->buildPath('database', $subPath);
     }
 
     public function getResourcesPath(?string $subPath = null): string
     {
-        $base = $this->path . '/resources';
-
-        return $subPath ? $base . '/' . ltrim($subPath, '/') : $base;
+        return $this->buildPath('resources', $subPath);
     }
 
     public function getRoutesPath(?string $subPath = null): string
     {
-        $base = $this->path . '/routes';
-
-        return $subPath ? $base . '/' . ltrim($subPath, '/') : $base;
+        return $this->buildPath('routes', $subPath);
     }
 
     public function getTestsPath(?string $subPath = null): string
     {
-        $base = $this->path . '/tests';
-
-        return $subPath ? $base . '/' . ltrim($subPath, '/') : $base;
+        return $this->buildPath('tests', $subPath);
     }
 
     public function getNamespace(): string

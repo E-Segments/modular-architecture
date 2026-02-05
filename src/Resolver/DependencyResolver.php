@@ -8,9 +8,19 @@ use Esegments\ModularArchitecture\Exceptions\CircularDependencyException;
 use Esegments\ModularArchitecture\Module\Module;
 use Esegments\ModularArchitecture\Module\ModuleCollection;
 use MJS\TopSort\Implementations\StringSort;
+use Sweetchuck\cdd\CircularDependencyDetector;
 
 class DependencyResolver
 {
+    protected const MAX_CHAIN_DEPTH = 100;
+
+    protected CircularDependencyDetector $circularDetector;
+
+    public function __construct(?CircularDependencyDetector $circularDetector = null)
+    {
+        $this->circularDetector = $circularDetector ?? new CircularDependencyDetector;
+    }
+
     /**
      * Resolve module load order based on dependencies.
      */
@@ -20,24 +30,17 @@ class DependencyResolver
             return $modules;
         }
 
-        // Detect cycles first
+        // Detect cycles first using sweetchuck/cdd
         $cycles = $this->detectCycles($modules);
         if (! empty($cycles)) {
             throw CircularDependencyException::forMultipleCycles($cycles);
         }
 
-        // Build topological sort
-        $sorter = new StringSort();
+        // Build topological sort using marcj/topsort
+        $sorter = new StringSort;
 
         foreach ($modules as $module) {
-            $dependencies = array_keys($module->getRequires());
-
-            // Only include dependencies that are in our module set
-            $validDeps = array_filter(
-                $dependencies,
-                fn ($dep) => $modules->hasModule($dep)
-            );
-
+            $validDeps = $this->getValidDependencies($module, $modules);
             $sorter->add($module->getName(), $validDeps);
         }
 
@@ -48,8 +51,8 @@ class DependencyResolver
             return $modules->sortByPriority();
         }
 
-        // Build new collection in sorted order, respecting priority within same level
-        $ordered = new ModuleCollection();
+        // Build new collection in sorted order
+        $ordered = new ModuleCollection;
 
         foreach ($sorted as $name) {
             $module = $modules->findByName($name);
@@ -62,85 +65,54 @@ class DependencyResolver
     }
 
     /**
-     * Detect circular dependencies.
+     * Detect circular dependencies using sweetchuck/cdd.
      *
-     * @return array<array<string>>
+     * @return array<array<string>> Array of cycles, each cycle is an array of module names
      */
     public function detectCycles(ModuleCollection $modules): array
+    {
+        $graph = $this->buildDependencyGraph($modules);
+
+        if (empty($graph)) {
+            return [];
+        }
+
+        // sweetchuck/cdd returns: ['a|b' => ['b', 'a', 'b']]
+        $detected = $this->circularDetector->detect($graph);
+
+        // Convert to our format: [['a', 'b', 'a'], ...]
+        return array_values($detected);
+    }
+
+    /**
+     * Build dependency graph from modules.
+     *
+     * @return array<string, array<string>>
+     */
+    protected function buildDependencyGraph(ModuleCollection $modules): array
     {
         $graph = [];
 
         foreach ($modules as $module) {
-            $graph[$module->getName()] = array_keys($module->getRequires());
+            $graph[$module->getName()] = $this->getValidDependencies($module, $modules);
         }
 
-        return $this->findCyclesInGraph($graph);
+        return $graph;
     }
 
     /**
-     * Find cycles in a dependency graph using DFS.
+     * Get valid dependencies for a module (only those that exist in the collection).
      *
-     * @param  array<string, array<string>>  $graph
-     * @return array<array<string>>
+     * @return array<string>
      */
-    protected function findCyclesInGraph(array $graph): array
+    protected function getValidDependencies(Module $module, ModuleCollection $modules): array
     {
-        $visited = [];
-        $recursionStack = [];
-        $cycles = [];
+        $dependencies = array_keys($module->getRequires());
 
-        foreach (array_keys($graph) as $node) {
-            if (! isset($visited[$node])) {
-                $this->dfs($node, $graph, $visited, $recursionStack, [], $cycles);
-            }
-        }
-
-        return $cycles;
-    }
-
-    /**
-     * Depth-first search for cycle detection.
-     *
-     * @param  array<string, array<string>>  $graph
-     * @param  array<string, bool>  $visited
-     * @param  array<string, bool>  $recursionStack
-     * @param  array<string>  $path
-     * @param  array<array<string>>  $cycles
-     */
-    protected function dfs(
-        string $node,
-        array $graph,
-        array &$visited,
-        array &$recursionStack,
-        array $path,
-        array &$cycles,
-    ): void {
-        $visited[$node] = true;
-        $recursionStack[$node] = true;
-        $path[] = $node;
-
-        $dependencies = $graph[$node] ?? [];
-
-        foreach ($dependencies as $dependency) {
-            // Only consider dependencies that exist in our graph
-            if (! isset($graph[$dependency])) {
-                continue;
-            }
-
-            if (! isset($visited[$dependency])) {
-                $this->dfs($dependency, $graph, $visited, $recursionStack, $path, $cycles);
-            } elseif (isset($recursionStack[$dependency])) {
-                // Found a cycle - extract the cycle path
-                $cycleStart = array_search($dependency, $path, true);
-                if ($cycleStart !== false) {
-                    $cyclePath = array_slice($path, $cycleStart);
-                    $cyclePath[] = $dependency; // Complete the cycle
-                    $cycles[] = $cyclePath;
-                }
-            }
-        }
-
-        $recursionStack[$node] = false;
+        return array_values(array_filter(
+            $dependencies,
+            fn (string $dep) => $modules->hasModule($dep)
+        ));
     }
 
     /**
@@ -155,7 +127,7 @@ class DependencyResolver
     }
 
     /**
-     * Get the dependency chain for a module.
+     * Get the dependency chain for a module (all transitive dependencies).
      *
      * @return array<string>
      */
@@ -167,36 +139,63 @@ class DependencyResolver
         }
 
         $chain = [];
-        $this->buildChain($module, $modules, $chain, []);
+        $visited = [];
+        $this->buildChain($module, $modules, $chain, $visited, 0);
 
         return $chain;
     }
 
     /**
-     * Build dependency chain recursively.
+     * Build dependency chain recursively with depth limit.
+     * Uses hash set for O(1) visited check.
      *
      * @param  array<string>  $chain
-     * @param  array<string>  $visited
+     * @param  array<string, bool>  $visited  Hash set for O(1) lookup
      */
     protected function buildChain(
         Module $module,
         ModuleCollection $modules,
         array &$chain,
-        array $visited,
+        array &$visited,
+        int $depth,
     ): void {
-        if (in_array($module->getName(), $visited, true)) {
+        // Prevent infinite recursion with depth limit
+        if ($depth >= self::MAX_CHAIN_DEPTH) {
             return;
         }
 
-        $visited[] = $module->getName();
+        $name = $module->getName();
+        if (isset($visited[$name])) {
+            return;
+        }
+
+        $visited[$name] = true;
 
         foreach (array_keys($module->getRequires()) as $depName) {
             $dep = $modules->findByName($depName);
             if ($dep) {
-                $this->buildChain($dep, $modules, $chain, $visited);
+                $this->buildChain($dep, $modules, $chain, $visited, $depth + 1);
             }
         }
 
-        $chain[] = $module->getName();
+        $chain[] = $name;
+    }
+
+    /**
+     * Get all modules that depend on the given module (reverse dependencies).
+     *
+     * @return array<string>
+     */
+    public function getDependents(string $moduleName, ModuleCollection $modules): array
+    {
+        $dependents = [];
+
+        foreach ($modules as $module) {
+            if (array_key_exists($moduleName, $module->getRequires())) {
+                $dependents[] = $module->getName();
+            }
+        }
+
+        return $dependents;
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture\Discovery;
 
+use Esegments\ModularArchitecture\Support\Json;
 use Illuminate\Filesystem\Filesystem;
 
 class ModuleStateManager
@@ -12,11 +13,16 @@ class ModuleStateManager
 
     protected bool $loaded = false;
 
+    /** @var array<string, bool> Flipped array for O(1) lookup */
+    protected array $protectedModulesMap = [];
+
     public function __construct(
         protected readonly Filesystem $files,
         protected readonly string $stateFile,
         protected readonly array $protectedModules = [],
-    ) {}
+    ) {
+        $this->protectedModulesMap = array_flip($protectedModules);
+    }
 
     /**
      * Load state from file.
@@ -46,7 +52,7 @@ class ModuleStateManager
     {
         $this->files->put(
             $this->stateFile,
-            json_encode($this->states, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+            Json::encode($this->states)
         );
     }
 
@@ -88,10 +94,11 @@ class ModuleStateManager
 
     /**
      * Check if module is protected.
+     * O(1) lookup using pre-built map.
      */
     public function isProtected(string $name): bool
     {
-        return in_array($name, $this->protectedModules, true);
+        return isset($this->protectedModulesMap[$name]);
     }
 
     /**
@@ -137,5 +144,15 @@ class ModuleStateManager
         if ($this->files->exists($this->stateFile)) {
             $this->files->delete($this->stateFile);
         }
+    }
+
+    /**
+     * Force reload from file.
+     */
+    public function reload(): void
+    {
+        $this->states = [];
+        $this->loaded = false;
+        $this->load();
     }
 }

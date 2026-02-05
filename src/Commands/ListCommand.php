@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Esegments\ModularArchitecture\Commands;
 
 use Esegments\ModularArchitecture\Modular;
+use Esegments\ModularArchitecture\Module\Module;
 use Illuminate\Console\Command;
 
 class ListCommand extends Command
@@ -13,7 +14,7 @@ class ListCommand extends Command
                             {--enabled : Show only enabled modules}
                             {--disabled : Show only disabled modules}';
 
-    protected $description = 'List all modules';
+    protected $description = 'List all discovered modules';
 
     public function handle(Modular $modular): int
     {
@@ -26,25 +27,28 @@ class ListCommand extends Command
         if ($modules->isEmpty()) {
             $this->components->warn('No modules found.');
 
-            return Command::SUCCESS;
+            return self::SUCCESS;
         }
 
-        $rows = $modules->map(fn ($module) => [
-            $module->getName(),
-            $module->getVersion(),
-            $module->isEnabled() ? '<fg=green>Enabled</>' : '<fg=yellow>Disabled</>',
-            $module->isProtected() ? '✓' : '',
-            implode(', ', array_keys($module->getRequires())) ?: '-',
-        ])->values()->all();
+        $headers = ['Module', 'Version', 'Status', 'Protected', 'Dependencies'];
+        $rows = $modules
+            ->sortByName()
+            ->map(fn (Module $module) => [
+                $module->getName(),
+                $module->getVersion(),
+                $module->isEnabled() ? '✓ Enabled' : '○ Disabled',
+                $module->isProtected() ? 'Yes' : '-',
+                implode(', ', array_keys($module->getRequires())) ?: '-',
+            ])
+            ->values()
+            ->all();
 
-        $this->table(
-            ['Module', 'Version', 'Status', 'Protected', 'Dependencies'],
-            $rows
-        );
+        $this->table($headers, $rows);
 
+        $stats = $modular->stats();
         $this->newLine();
-        $this->components->info("Total: {$modular->count()} modules ({$modular->enabledCount()} enabled)");
+        $this->components->info("Total: {$stats['total']} | Enabled: {$stats['enabled']} | Disabled: {$stats['disabled']} | Protected: {$stats['protected']}");
 
-        return Command::SUCCESS;
+        return self::SUCCESS;
     }
 }

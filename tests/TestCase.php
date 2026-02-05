@@ -15,6 +15,9 @@ abstract class TestCase extends Orchestra
 
         // Create test modules directory
         $this->app['files']->ensureDirectoryExists($this->getTestModulesPath());
+
+        // Ensure clean state at start of each test
+        \Esegments\ModularArchitecture\Facades\Modular::refresh();
     }
 
     protected function tearDown(): void
@@ -46,18 +49,18 @@ abstract class TestCase extends Orchestra
         ]);
 
         $app['config']->set('modular.cache.enabled', false);
-        $app['config']->set('modular.state_file', $this->getTestModulesPath() . '/modules_statuses.json');
+        $app['config']->set('modular.storage.states_file', $this->getTestModulesPath().'/modules_statuses.json');
     }
 
     protected function getTestModulesPath(): string
     {
-        return __DIR__ . '/Fixtures/Modules';
+        return __DIR__.'/Fixtures/Modules';
     }
 
     protected function createTestModule(string $name, array $manifest = []): string
     {
-        $path = $this->getTestModulesPath() . '/' . $name;
-        $this->app['files']->ensureDirectoryExists($path . '/app/Providers');
+        $path = $this->getTestModulesPath().'/'.$name;
+        $this->app['files']->ensureDirectoryExists($path.'/app/Providers');
 
         // Create module.json
         $defaultManifest = [
@@ -71,9 +74,12 @@ abstract class TestCase extends Orchestra
         ];
 
         $this->app['files']->put(
-            $path . '/module.json',
+            $path.'/module.json',
             json_encode(array_merge($defaultManifest, $manifest), JSON_PRETTY_PRINT)
         );
+
+        // Auto-refresh discovery so the module is immediately available
+        \Esegments\ModularArchitecture\Facades\Modular::refresh();
 
         return $path;
     }
