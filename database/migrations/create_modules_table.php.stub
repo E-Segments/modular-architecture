@@ -9,24 +9,32 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
+     * Get the migration connection name.
+     */
+    public function getConnection(): ?string
+    {
+        return config('modular.storage.connection');
+    }
+
+    /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('modules', function (Blueprint $table) {
+        $tableName = config('modular.storage.table', 'modules');
+
+        Schema::create($tableName, function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->boolean('enabled')->default(true);
+            $table->string('alias')->nullable()->index();
             $table->string('version')->nullable();
-            $table->string('installed_version')->nullable();
+            $table->boolean('enabled')->default(true)->index();
+            $table->boolean('protected')->default(false);
+            $table->string('path')->nullable();
             $table->json('metadata')->nullable();
-            $table->timestamp('installed_at')->nullable();
             $table->timestamp('enabled_at')->nullable();
             $table->timestamp('disabled_at')->nullable();
             $table->timestamps();
-
-            $table->index('enabled');
-            $table->index(['name', 'enabled']);
         });
     }
 
@@ -35,6 +43,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('modules');
+        $tableName = config('modular.storage.table', 'modules');
+
+        Schema::dropIfExists($tableName);
     }
 };
