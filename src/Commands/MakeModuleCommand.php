@@ -7,7 +7,6 @@ namespace Esegments\ModularArchitecture\Commands;
 use Esegments\ModularArchitecture\Modular;
 use Illuminate\Console\Command;
 
-use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\text;
 
@@ -15,7 +14,7 @@ class MakeModuleCommand extends Command
 {
     protected $signature = 'modular:make
                             {name? : The name of the module}
-                            {--version=1.0.0 : Module version}
+                            {--ver=1.0.0 : Module version}
                             {--description= : Module description}
                             {--interactive : Use interactive mode}
                             {--model : Generate a model}
@@ -109,7 +108,7 @@ class MakeModuleCommand extends Command
         $all = $this->option('all');
 
         $options = [
-            'version' => $this->option('version'),
+            'version' => $this->option('ver'),
             'description' => $this->option('description') ?? '',
             'model' => $all || $this->option('model'),
             'controller' => $all || $this->option('controller'),

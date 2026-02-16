@@ -1,0 +1,10 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\{{ MODULE_NAME }}\Contracts;
+
+interface {{ CLASS_NAME }}Contract
+{
+    //
+}

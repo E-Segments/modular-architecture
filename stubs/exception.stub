@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\{{ MODULE_NAME }}\Exceptions;
+
+use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class {{ CLASS_NAME }}Exception extends Exception
+{
+    /**
+     * Report the exception.
+     */
+    public function report(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Render the exception as an HTTP response.
+     */
+    public function render(Request $request): JsonResponse|false
+    {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $this->getMessage(),
+            ], 422);
+        }
+
+        return false;
+    }
+}

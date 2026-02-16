@@ -1,0 +1,89 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\{{ MODULE_NAME }}\Repositories;
+
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+
+class {{ CLASS_NAME }}Repository
+{
+    /**
+     * Create a new repository instance.
+     */
+    public function __construct()
+    {
+        //
+    }
+
+    /**
+     * Get a new query builder instance.
+     */
+    public function query(): Builder
+    {
+        return $this->getModel()->newQuery();
+    }
+
+    /**
+     * Get all records.
+     */
+    public function all(): Collection
+    {
+        return $this->query()->get();
+    }
+
+    /**
+     * Find a record by ID.
+     */
+    public function find(int $id): ?Model
+    {
+        return $this->query()->find($id);
+    }
+
+    /**
+     * Find a record by ID or fail.
+     */
+    public function findOrFail(int $id): Model
+    {
+        return $this->query()->findOrFail($id);
+    }
+
+    /**
+     * Create a new record.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function create(array $attributes): Model
+    {
+        return $this->getModel()->create($attributes);
+    }
+
+    /**
+     * Update a record.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function update(Model $model, array $attributes): bool
+    {
+        return $model->update($attributes);
+    }
+
+    /**
+     * Delete a record.
+     */
+    public function delete(Model $model): bool
+    {
+        return $model->delete();
+    }
+
+    /**
+     * Get the model instance.
+     */
+    protected function getModel(): Model
+    {
+        // TODO: Return your model instance
+        throw new \RuntimeException('getModel() must be implemented');
+    }
+}

@@ -1,0 +1,16 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\{{ MODULE_NAME }}\Helpers;
+
+class {{ CLASS_NAME }}Helper
+{
+    /**
+     * Create a new helper instance.
+     */
+    public function __construct()
+    {
+        //
+    }
+}

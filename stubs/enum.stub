@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\{{ MODULE_NAME }}\Enums;
+
+enum {{ CLASS_NAME }}: string
+{
+    // Add your cases here
+    // case Example = 'example';
+
+    /**
+     * Get the label for the enum value.
+     */
+    public function getLabel(): string
+    {
+        return match ($this) {
+            // self::Example => 'Example Label',
+        };
+    }
+}

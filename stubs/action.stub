@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\{{ MODULE_NAME }}\Actions;
+
+class {{ CLASS_NAME }}Action
+{
+    /**
+     * Create a new action instance.
+     */
+    public function __construct()
+    {
+        //
+    }
+
+    /**
+     * Execute the action.
+     */
+    public function execute(): mixed
+    {
+        //
+    }
+}
