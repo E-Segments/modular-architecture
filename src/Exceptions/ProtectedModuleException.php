@@ -4,17 +4,24 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture\Exceptions;
 
-use Exception;
-
-class ProtectedModuleException extends Exception
+/**
+ * Exception thrown when trying to modify a protected module.
+ */
+class ProtectedModuleException extends ModuleException
 {
+    protected int $statusCode = 403;
+
+    protected ?string $errorCode = 'PROTECTED_MODULE';
+
     public function __construct(
         public readonly string $moduleName,
         ?string $message = null,
     ) {
         parent::__construct(
-            $message ?? "Module [{$moduleName}] is protected and cannot be disabled or removed."
+            message: $message ?? "Module [{$moduleName}] is protected and cannot be disabled or removed.",
+            context: ['module' => $moduleName],
         );
+        $this->setModuleName($moduleName);
     }
 
     public static function cannotDisable(string $name): self

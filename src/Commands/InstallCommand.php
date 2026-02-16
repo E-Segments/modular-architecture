@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture\Commands;
 
+use Esegments\LaravelExtensions\Facades\Extensions;
+use Esegments\ModularArchitecture\Extensions\Points\BeforeModuleInstall;
+use Esegments\ModularArchitecture\Extensions\Points\ModuleInstalled;
 use Esegments\ModularArchitecture\GitHub\ModuleInstaller;
 use Esegments\ModularArchitecture\Modular;
 use Illuminate\Console\Command;
 
-use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\spin;
 use function Laravel\Prompts\text;
 
@@ -41,6 +43,29 @@ class InstallCommand extends Command
             $this->line("  Version: {$version}");
         }
 
+        // Dispatch BeforeModuleInstall extension point (interruptible)
+        $beforeInstall = new BeforeModuleInstall($source, $version);
+        $canProceed = Extensions::dispatchInterruptible($beforeInstall);
+
+        if (! $canProceed) {
+            $handler = $beforeInstall->getInterruptedBy();
+            $this->components->error('Installation was cancelled by an extension handler.');
+            if ($handler) {
+                $this->line("  Interrupted by: {$handler}");
+            }
+
+            return Command::FAILURE;
+        }
+
+        if ($beforeInstall->hasErrors()) {
+            $this->components->error('Installation blocked:');
+            foreach ($beforeInstall->errors as $error) {
+                $this->line("  - {$error}");
+            }
+
+            return Command::FAILURE;
+        }
+
         try {
             $result = spin(
                 callback: fn () => $installer->install($source, $version),
@@ -60,6 +85,15 @@ class InstallCommand extends Command
                 'installed_at' => now()->toIso8601String(),
             ]);
 
+            // Dispatch ModuleInstalled extension point (graceful - errors shouldn't block completed install)
+            Extensions::gracefully()->dispatch(new ModuleInstalled(
+                module: $result->module,
+                moduleName: $result->module->getName(),
+                source: $result->source,
+                version: $result->version,
+                path: $result->path,
+            ));
+
             $this->components->info("Module [{$result->module->getName()}] installed successfully!");
             $this->components->bulletList([
                 "Version: {$result->version}",
@@ -73,7 +107,7 @@ class InstallCommand extends Command
 
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            $this->components->error('Installation failed: ' . $e->getMessage());
+            $this->components->error('Installation failed: '.$e->getMessage());
 
             if ($this->output->isVerbose()) {
                 $this->line($e->getTraceAsString());

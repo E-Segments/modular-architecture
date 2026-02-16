@@ -171,7 +171,7 @@ class ModuleRegistry
             throw new DependencyException(
                 moduleName: $name,
                 dependencyName: $dependents->first()->getName(),
-                message: "Cannot disable [{$name}] - the following modules depend on it: " . implode(', ', $dependents->names()),
+                message: "Cannot disable [{$name}] - the following modules depend on it: ".implode(', ', $dependents->names()),
             );
         }
 

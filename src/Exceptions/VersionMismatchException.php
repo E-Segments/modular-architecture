@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture\Exceptions;
 
-use Exception;
-
-class VersionMismatchException extends Exception
+/**
+ * Exception thrown when a module version constraint is not satisfied.
+ */
+class VersionMismatchException extends ModuleException
 {
+    protected int $statusCode = 422;
+
+    protected ?string $errorCode = 'VERSION_MISMATCH';
+
     public function __construct(
         public readonly string $moduleName,
         public readonly string $dependencyName,
@@ -16,8 +21,15 @@ class VersionMismatchException extends Exception
         ?string $message = null,
     ) {
         parent::__construct(
-            $message ?? "Module [{$moduleName}] requires [{$dependencyName}] version [{$requiredVersion}], but [{$actualVersion}] is installed."
+            message: $message ?? "Module [{$moduleName}] requires [{$dependencyName}] version [{$requiredVersion}], but [{$actualVersion}] is installed.",
+            context: [
+                'module' => $moduleName,
+                'dependency' => $dependencyName,
+                'required_version' => $requiredVersion,
+                'actual_version' => $actualVersion,
+            ],
         );
+        $this->setModuleName($moduleName);
     }
 
     public static function forConstraint(

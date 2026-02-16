@@ -122,6 +122,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Config Merging
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, module configuration files will be automatically merged
+    | into Laravel's config repository. Each module's config/config.php or
+    | config/{module_alias}.php will be accessible via config('{module_alias}.key').
+    |
+    | Example:
+    |   Modules/Products/config/products.php with ['low_stock_threshold' => 5]
+    |   Access via: config('products.low_stock_threshold')
+    |
+    */
+
+    'config_merge' => [
+        'enabled' => env('MODULAR_CONFIG_MERGE', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | GitHub Integration
     |--------------------------------------------------------------------------
     |
@@ -222,6 +241,344 @@ return [
 
     'octane' => [
         'refresh_on_tick' => env('MODULAR_OCTANE_REFRESH_ON_TICK', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Framework Bridges
+    |--------------------------------------------------------------------------
+    |
+    | Bridges auto-discover and register framework-specific components from
+    | enabled modules. Each bridge integrates with a specific Laravel
+    | ecosystem framework (Livewire, Filament, etc.).
+    |
+    | Enable bridges as needed. Bridges only activate when their required
+    | framework is installed.
+    |
+    */
+
+    'bridges' => [
+
+        /*
+        |--------------------------------------------------------------------------
+        | Bridge Cache
+        |--------------------------------------------------------------------------
+        |
+        | Cache discovered bridge components for faster boot in production.
+        | Run `php artisan modular:bridges:cache` to warm the cache.
+        | Run `php artisan modular:bridges:clear` to clear it.
+        |
+        */
+
+        'cache' => [
+            'enabled' => env('MODULAR_BRIDGE_CACHE', false),
+            'driver' => env('MODULAR_BRIDGE_CACHE_DRIVER', 'file'), // 'file' or 'cache'
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Livewire Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-discovers and registers Livewire components from modules.
+        |
+        | Components in Modules/{Name}/app/Livewire/*.php are registered
+        | with a module prefix: <livewire:products::product-table />
+        |
+        */
+
+        'livewire' => [
+            'enabled' => env('MODULAR_BRIDGE_LIVEWIRE', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Filament Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-discovers Filament resources, pages, and widgets from modules.
+        |
+        | Components in:
+        | - Modules/{Name}/app/Filament/Resources/*.php
+        | - Modules/{Name}/app/Filament/Pages/*.php
+        | - Modules/{Name}/app/Filament/Widgets/*.php
+        |
+        */
+
+        'filament' => [
+            'enabled' => env('MODULAR_BRIDGE_FILAMENT', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Routes Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-loads route files from modules:
+        | - routes/web.php -> Web routes with 'web' middleware
+        | - routes/api.php -> API routes with 'api' middleware
+        | - routes/console.php -> Console commands
+        | - routes/channels.php -> Broadcast channels
+        |
+        */
+
+        'routes' => [
+            'enabled' => env('MODULAR_BRIDGE_ROUTES', false),
+            'prefix_web' => true,                           // Prefix web routes with module name
+            'prefix_api' => true,                           // Prefix API routes with module name
+            'api_prefix' => 'api',                          // API route prefix
+            'web_middleware' => ['web'],                    // Middleware for web routes
+            'api_middleware' => ['api'],                    // Middleware for API routes
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Events Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-discovers event listeners and subscribers from modules.
+        |
+        | Discovery paths:
+        | - Modules/{Name}/app/Listeners/*.php -> Event listeners
+        | - Modules/{Name}/app/Subscribers/*.php -> Event subscribers
+        |
+        | Listeners are matched to events by their handle() method signature.
+        |
+        */
+
+        'events' => [
+            'enabled' => env('MODULAR_BRIDGE_EVENTS', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Blade Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-registers Blade views and components from modules.
+        |
+        | Features:
+        | - View namespaces: @include('products::partials.card')
+        | - Anonymous components: <x-products::button />
+        | - Class components: Modules/{Name}/app/View/Components/*.php
+        |
+        */
+
+        'blade' => [
+            'enabled' => env('MODULAR_BRIDGE_BLADE', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Schedule Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-discovers and registers scheduled tasks from modules.
+        |
+        | Supported patterns:
+        | - Modules/{Name}/app/Console/Schedule.php with __invoke($schedule)
+        | - Modules/{Name}/app/Console/Kernel.php with schedule($schedule)
+        |
+        */
+
+        'schedule' => [
+            'enabled' => env('MODULAR_BRIDGE_SCHEDULE', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Migration Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-loads migrations from modules.
+        |
+        | Discovery path: database/migrations/*.php
+        |
+        | Migrations are registered with Laravel's migrator and available
+        | to `php artisan migrate`.
+        |
+        */
+
+        'migrations' => [
+            'enabled' => env('MODULAR_BRIDGE_MIGRATIONS', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Translation Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-loads translations from modules.
+        |
+        | Discovery paths:
+        | - lang/*.php (PHP translation files)
+        | - lang/*.json (JSON translation files)
+        | - lang/{locale}/*.php (Locale-specific files)
+        |
+        | Access via: trans('products::messages.created')
+        |
+        */
+
+        'translations' => [
+            'enabled' => env('MODULAR_BRIDGE_TRANSLATIONS', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Observer Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-discovers and registers model observers from modules.
+        |
+        | Discovery path: app/Observers/*.php
+        |
+        | Convention: ProductObserver observes Product model
+        |
+        */
+
+        'observers' => [
+            'enabled' => env('MODULAR_BRIDGE_OBSERVERS', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Policy Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-discovers and registers authorization policies from modules.
+        |
+        | Discovery path: app/Policies/*.php
+        |
+        | Convention: ProductPolicy authorizes Product model
+        |
+        */
+
+        'policies' => [
+            'enabled' => env('MODULAR_BRIDGE_POLICIES', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Command Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-discovers and registers Artisan console commands from modules.
+        |
+        | Discovery path: app/Console/Commands/*.php
+        |
+        */
+
+        'commands' => [
+            'enabled' => env('MODULAR_BRIDGE_COMMANDS', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Middleware Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-discovers and registers HTTP middleware from modules.
+        |
+        | Discovery path: app/Http/Middleware/*.php
+        |
+        | Middleware is aliased as: products.check-stock
+        | Define static $alias property to customize the alias.
+        | Define static $global = true for global middleware.
+        | Define static $groups = ['web'] to add to groups.
+        |
+        */
+
+        'middleware' => [
+            'enabled' => env('MODULAR_BRIDGE_MIDDLEWARE', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Service Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-discovers and binds service contracts to implementations.
+        |
+        | Discovery paths:
+        | - app/Contracts/*.php -> Interface definitions
+        | - app/Services/*.php -> Service implementations
+        |
+        | Binding conventions:
+        | - ProductServiceContract -> ProductService
+        | - ProductRepositoryContract -> ProductRepository
+        |
+        | *Repository, *Manager, *Factory are bound as singletons.
+        | *Service, *Handler are bound as regular bindings.
+        |
+        */
+
+        'services' => [
+            'enabled' => env('MODULAR_BRIDGE_SERVICES', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Config Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-merges module configuration files with deep merging support
+        | and environment-specific overrides.
+        |
+        | Discovery paths:
+        | - config/*.php -> Module configuration files
+        | - config/{env}.php -> Environment-specific overrides (testing.php, production.php)
+        |
+        */
+
+        'config' => [
+            'enabled' => env('MODULAR_BRIDGE_CONFIG', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Asset Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-publishes and symlinks module static assets.
+        |
+        | Discovery paths:
+        | - public/ -> Public assets
+        | - resources/assets/ -> Development assets
+        |
+        | Published to: public/modules/{module-name}/
+        |
+        */
+
+        'assets' => [
+            'enabled' => env('MODULAR_BRIDGE_ASSETS', false),
+            'symlink' => env('MODULAR_BRIDGE_ASSETS_SYMLINK', false), // Use symlinks for dev
+            'auto_publish' => env('MODULAR_BRIDGE_ASSETS_AUTO_PUBLISH', false),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Link Bridge
+        |--------------------------------------------------------------------------
+        |
+        | Auto-discovers link definition files from modules for the new
+        | fluent Link Registry system.
+        |
+        | Discovery path: app/Links/*.php
+        |
+        | Link definitions replace the boilerplate of ModuleLinkServiceProvider
+        | with a clean, declarative API for cross-module relationships, macros,
+        | and Filament integrations.
+        |
+        | Note: Actual link loading and booting is handled by the Core module's
+        | LinkBootstrapper. This bridge provides discovery and tracking for
+        | integration with the modular architecture system.
+        |
+        */
+
+        'link' => [
+            'enabled' => env('MODULAR_BRIDGE_LINK', true),
+        ],
+
     ],
 
 ];

@@ -4,16 +4,58 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture;
 
+use Esegments\ModularArchitecture\Bridges\Asset\AssetBridge;
+use Esegments\ModularArchitecture\Bridges\Blade\BladeBridge;
+use Esegments\ModularArchitecture\Bridges\BridgeManager;
+use Esegments\ModularArchitecture\Bridges\Cache\BridgeCache;
+use Esegments\ModularArchitecture\Bridges\Command\CommandBridge;
+use Esegments\ModularArchitecture\Bridges\Config\ConfigBridge;
+use Esegments\ModularArchitecture\Bridges\Event\EventBridge;
+use Esegments\ModularArchitecture\Bridges\Filament\FilamentBridge;
+use Esegments\ModularArchitecture\Bridges\Link\LinkBridge;
+use Esegments\ModularArchitecture\Bridges\Livewire\LivewireBridge;
+use Esegments\ModularArchitecture\Bridges\Middleware\MiddlewareBridge;
+use Esegments\ModularArchitecture\Bridges\Migration\MigrationBridge;
+use Esegments\ModularArchitecture\Bridges\Observer\ObserverBridge;
+use Esegments\ModularArchitecture\Bridges\Policy\PolicyBridge;
+use Esegments\ModularArchitecture\Bridges\Route\RouteBridge;
+use Esegments\ModularArchitecture\Bridges\Schedule\ScheduleBridge;
+use Esegments\ModularArchitecture\Bridges\Service\ServiceBridge;
+use Esegments\ModularArchitecture\Bridges\Translation\TranslationBridge;
 use Esegments\ModularArchitecture\Cache\ModuleCache;
+use Esegments\ModularArchitecture\Commands\BridgesCacheCommand;
+use Esegments\ModularArchitecture\Commands\BridgesClearCommand;
+use Esegments\ModularArchitecture\Commands\BridgesCommand;
+use Esegments\ModularArchitecture\Commands\BridgesInspectCommand;
 use Esegments\ModularArchitecture\Commands\CacheClearCommand;
 use Esegments\ModularArchitecture\Commands\CacheCommand;
 use Esegments\ModularArchitecture\Commands\DependentsCommand;
 use Esegments\ModularArchitecture\Commands\DisableCommand;
 use Esegments\ModularArchitecture\Commands\EnableCommand;
-use Esegments\ModularArchitecture\Commands\GraphCommand;
+use Esegments\ModularArchitecture\Commands\HealthCommand;
 use Esegments\ModularArchitecture\Commands\InstallCommand;
 use Esegments\ModularArchitecture\Commands\ListCommand;
+use Esegments\ModularArchitecture\Commands\MakeActionCommand;
+use Esegments\ModularArchitecture\Commands\MakeCastCommand;
+use Esegments\ModularArchitecture\Commands\MakeChannelCommand;
+use Esegments\ModularArchitecture\Commands\MakeClassCommand;
+use Esegments\ModularArchitecture\Commands\MakeCommandCommand;
+use Esegments\ModularArchitecture\Commands\MakeComponentCommand;
+use Esegments\ModularArchitecture\Commands\MakeDtoCommand;
+use Esegments\ModularArchitecture\Commands\MakeEnumCommand;
+use Esegments\ModularArchitecture\Commands\MakeExceptionCommand;
+use Esegments\ModularArchitecture\Commands\MakeHelperCommand;
+use Esegments\ModularArchitecture\Commands\MakeInterfaceCommand;
+use Esegments\ModularArchitecture\Commands\MakeMiddlewareCommand;
 use Esegments\ModularArchitecture\Commands\MakeModuleCommand;
+use Esegments\ModularArchitecture\Commands\MakeObserverCommand;
+use Esegments\ModularArchitecture\Commands\MakeProviderCommand;
+use Esegments\ModularArchitecture\Commands\MakeRepositoryCommand;
+use Esegments\ModularArchitecture\Commands\MakeScopeCommand;
+use Esegments\ModularArchitecture\Commands\MakeServiceCommand;
+use Esegments\ModularArchitecture\Commands\MakeTraitCommand;
+use Esegments\ModularArchitecture\Commands\MakeViewCommand;
+use Esegments\ModularArchitecture\Commands\MigrateCommand;
 use Esegments\ModularArchitecture\Commands\OptimizeCommand;
 use Esegments\ModularArchitecture\Commands\OutdatedCommand;
 use Esegments\ModularArchitecture\Commands\Overrides\ControllerMakeCommand;
@@ -31,7 +73,9 @@ use Esegments\ModularArchitecture\Commands\Overrides\ResourceMakeCommand;
 use Esegments\ModularArchitecture\Commands\Overrides\RuleMakeCommand;
 use Esegments\ModularArchitecture\Commands\Overrides\SeederMakeCommand;
 use Esegments\ModularArchitecture\Commands\Overrides\TestMakeCommand;
+use Esegments\ModularArchitecture\Commands\PublishAssetsCommand;
 use Esegments\ModularArchitecture\Commands\RemoveCommand;
+use Esegments\ModularArchitecture\Commands\SeedCommand;
 use Esegments\ModularArchitecture\Commands\StatusCommand;
 use Esegments\ModularArchitecture\Commands\StorageMigrateCommand;
 use Esegments\ModularArchitecture\Commands\UpdateCommand;
@@ -45,6 +89,9 @@ use Esegments\ModularArchitecture\GitHub\ArchiveHandler;
 use Esegments\ModularArchitecture\GitHub\GitHubClient;
 use Esegments\ModularArchitecture\GitHub\ModuleBackup;
 use Esegments\ModularArchitecture\GitHub\ModuleInstaller;
+use Esegments\ModularArchitecture\Health\ModuleHealthChecker;
+use Esegments\ModularArchitecture\Links\LinkBootstrapper;
+use Esegments\ModularArchitecture\Links\LinkRegistry;
 use Esegments\ModularArchitecture\Module\ModuleLoader;
 use Esegments\ModularArchitecture\Registry\ModuleRegistry;
 use Esegments\ModularArchitecture\Resolver\DependencyResolver;
@@ -71,21 +118,48 @@ class ModularServiceProvider extends PackageServiceProvider
             ->hasConfigFile('modular')
             ->hasCommands([
                 MakeModuleCommand::class,
+                MakeServiceCommand::class,
+                MakeRepositoryCommand::class,
+                MakeDtoCommand::class,
+                MakeActionCommand::class,
+                MakeObserverCommand::class,
+                MakeEnumCommand::class,
                 ListCommand::class,
                 StatusCommand::class,
                 EnableCommand::class,
                 DisableCommand::class,
                 ValidateCommand::class,
                 DependentsCommand::class,
-                GraphCommand::class,
+                HealthCommand::class,
                 RemoveCommand::class,
                 CacheCommand::class,
                 CacheClearCommand::class,
                 OptimizeCommand::class,
+                PublishAssetsCommand::class,
                 InstallCommand::class,
                 UpdateCommand::class,
                 OutdatedCommand::class,
                 StorageMigrateCommand::class,
+                MigrateCommand::class,
+                SeedCommand::class,
+                BridgesCommand::class,
+                BridgesInspectCommand::class,
+                BridgesCacheCommand::class,
+                BridgesClearCommand::class,
+                // Additional generator commands
+                MakeCastCommand::class,
+                MakeChannelCommand::class,
+                MakeClassCommand::class,
+                MakeCommandCommand::class,
+                MakeComponentCommand::class,
+                MakeExceptionCommand::class,
+                MakeHelperCommand::class,
+                MakeInterfaceCommand::class,
+                MakeMiddlewareCommand::class,
+                MakeProviderCommand::class,
+                MakeScopeCommand::class,
+                MakeTraitCommand::class,
+                MakeViewCommand::class,
             ]);
 
         // Register publishables
@@ -115,6 +189,8 @@ class ModularServiceProvider extends PackageServiceProvider
         $this->registerScaffolding();
         $this->registerGitHub();
         $this->registerModular();
+        $this->registerBridges();
+        $this->registerLinks();
     }
 
     /**
@@ -131,6 +207,17 @@ class ModularServiceProvider extends PackageServiceProvider
         if (config('modular.discovery.auto', true)) {
             $this->registerModuleProviders();
         }
+
+        // Merge module configs if enabled
+        if (config('modular.config_merge.enabled', true)) {
+            $this->mergeModuleConfigs();
+        }
+
+        // Register and boot framework bridges
+        $this->bootBridges();
+
+        // Boot link registry (discover and load link definitions)
+        $this->bootLinks();
 
         // Register Octane listeners if Octane is installed
         $this->registerOctaneListeners();
@@ -304,6 +391,14 @@ class ModularServiceProvider extends PackageServiceProvider
                 resolver: $app->make(DependencyResolver::class),
             );
         });
+
+        $this->app->singleton(ModuleHealthChecker::class, function ($app) {
+            return new ModuleHealthChecker(
+                files: $app->make(Filesystem::class),
+                resolver: $app->make(DependencyResolver::class),
+                modular: $app->make(Modular::class),
+            );
+        });
     }
 
     /**
@@ -410,6 +505,99 @@ class ModularServiceProvider extends PackageServiceProvider
     }
 
     /**
+     * Register the bridge manager and all bridges.
+     */
+    protected function registerBridges(): void
+    {
+        // Register bridge cache
+        $this->app->singleton(BridgeCache::class, function ($app) {
+            return new BridgeCache(
+                cache: $app->make(CacheRepository::class),
+                files: $app->make(Filesystem::class),
+                cachePath: config('modular.cache.path', storage_path('modular/cache')),
+                ttl: config('modular.cache.ttl', 86400),
+                enabled: config('modular.bridges.cache.enabled', false),
+                driver: config('modular.bridges.cache.driver', 'file'),
+            );
+        });
+
+        $this->app->singleton(BridgeManager::class, function ($app) {
+            $manager = new BridgeManager($app);
+
+            // Set cache
+            $manager->setCache($app->make(BridgeCache::class));
+
+            // Register all bridges
+            $manager->register('livewire', new LivewireBridge($app));
+            $manager->register('filament', new FilamentBridge($app));
+            $manager->register('routes', new RouteBridge($app));
+            $manager->register('events', new EventBridge($app));
+            $manager->register('blade', new BladeBridge($app));
+            $manager->register('schedule', new ScheduleBridge($app));
+            $manager->register('migrations', new MigrationBridge($app));
+            $manager->register('translations', new TranslationBridge($app));
+            $manager->register('observers', new ObserverBridge($app));
+            $manager->register('policies', new PolicyBridge($app));
+            $manager->register('commands', new CommandBridge($app));
+            $manager->register('middleware', new MiddlewareBridge($app));
+            $manager->register('services', new ServiceBridge($app));
+            $manager->register('config', new ConfigBridge($app));
+            $manager->register('assets', new AssetBridge($app));
+            $manager->register('links', new LinkBridge($app));
+
+            return $manager;
+        });
+
+        $this->app->alias(BridgeManager::class, 'modular.bridges');
+    }
+
+    /**
+     * Boot framework bridges.
+     *
+     * Registers module components with each enabled bridge,
+     * then boots all bridges.
+     */
+    protected function bootBridges(): void
+    {
+        try {
+            $bridgeManager = $this->app->make(BridgeManager::class);
+
+            // Skip if no bridges are enabled
+            if ($bridgeManager->enabled()->isEmpty()) {
+                return;
+            }
+
+            // Try to load from cache first
+            $loadedFromCache = $bridgeManager->loadFromCache();
+
+            if (! $loadedFromCache) {
+                // Discover components from modules
+                $modular = $this->app->make(Modular::class);
+                $modules = $modular->enabled();
+
+                // Register each module with all enabled bridges
+                foreach ($modules as $module) {
+                    $bridgeManager->registerModule($module);
+                }
+            }
+
+            // Boot all bridges
+            $bridgeManager->boot();
+
+            if (config('modular.debug', false)) {
+                logger()->debug('[Modular] Bridges booted', [
+                    'from_cache' => $loadedFromCache,
+                    'status' => $bridgeManager->status(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            if (config('modular.debug', false)) {
+                logger()->error('[Modular] Failed to boot bridges: '.$e->getMessage());
+            }
+        }
+    }
+
+    /**
      * Register module service providers.
      */
     protected function registerModuleProviders(): void
@@ -432,6 +620,120 @@ class ModularServiceProvider extends PackageServiceProvider
     }
 
     /**
+     * Merge module configuration files into Laravel config.
+     *
+     * Each enabled module's config/config.php or config/{module_alias}.php
+     * will be merged into config('{module_alias}.key').
+     *
+     * Note: This method is skipped if the ConfigBridge is enabled,
+     * as the bridge provides more advanced config merging with
+     * environment-specific overrides and deep array merging.
+     */
+    protected function mergeModuleConfigs(): void
+    {
+        // Skip if ConfigBridge is enabled (it handles config merging)
+        if (config('modular.bridges.config.enabled', false)) {
+            return;
+        }
+
+        try {
+            $modular = $this->app->make(Modular::class);
+            $modules = $modular->enabled();
+
+            foreach ($modules as $module) {
+                $alias = $module->getAlias();
+                $configPath = $module->getConfigPath();
+
+                // Try config/{alias}.php first
+                $aliasConfigPath = $configPath.'/'.$alias.'.php';
+                if (file_exists($aliasConfigPath)) {
+                    $this->mergeConfigFrom($aliasConfigPath, $alias);
+
+                    continue;
+                }
+
+                // Fall back to config/config.php
+                $defaultConfigPath = $configPath.'/config.php';
+                if (file_exists($defaultConfigPath)) {
+                    $this->mergeConfigFrom($defaultConfigPath, $alias);
+                }
+            }
+        } catch (\Exception $e) {
+            // Fail silently during boot - log if debug enabled
+            if (config('modular.debug', false)) {
+                logger()->error('[Modular] Failed to merge module configs: '.$e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Register the Link Registry and Bootstrapper.
+     */
+    protected function registerLinks(): void
+    {
+        $this->app->singleton(LinkRegistry::class, function ($app) {
+            $registry = new LinkRegistry;
+
+            // Set up module checker to use ModuleStatusCache if available
+            if (class_exists('Modules\\Core\\Services\\ModuleStatusCache')) {
+                $registry->setModuleChecker(function (array $modules): bool {
+                    return \Modules\Core\Services\ModuleStatusCache::allEnabled($modules);
+                });
+            }
+
+            // Set Filament registries if they exist in the Core module
+            $registries = [];
+            if ($app->bound('Modules\\Core\\Services\\ResourceConfigRegistry')) {
+                $registries['resourceConfig'] = $app->make('Modules\\Core\\Services\\ResourceConfigRegistry');
+            }
+            if ($app->bound('Modules\\Core\\Services\\RelationManagerRegistry')) {
+                $registries['relationManager'] = $app->make('Modules\\Core\\Services\\RelationManagerRegistry');
+            }
+            if ($app->bound('Modules\\Core\\Services\\FormComponentRegistry')) {
+                $registries['formComponent'] = $app->make('Modules\\Core\\Services\\FormComponentRegistry');
+            }
+            if (! empty($registries)) {
+                $registry->setRegistries($registries);
+            }
+
+            return $registry;
+        });
+
+        $this->app->singleton(LinkBootstrapper::class, function ($app) {
+            return new LinkBootstrapper(
+                app: $app,
+                registry: $app->make(LinkRegistry::class),
+                modulesPath: config('modular.paths.0', base_path('Modules')),
+            );
+        });
+    }
+
+    /**
+     * Boot the Link Registry.
+     *
+     * Discovers link definition files from modules and boots them.
+     */
+    protected function bootLinks(): void
+    {
+        if (! config('modular.links.enabled', true)) {
+            return;
+        }
+
+        try {
+            $bootstrapper = $this->app->make(LinkBootstrapper::class);
+            $bootstrapper->boot();
+
+            if (config('modular.debug', false)) {
+                logger()->debug('[Modular] Links booted', $bootstrapper->statistics());
+            }
+        } catch (\Exception $e) {
+            if (config('modular.debug', false)) {
+                logger()->error('[Modular] Failed to boot links: '.$e->getMessage());
+            }
+        }
+    }
+
+    /**
      * Get the services provided by the provider.
      *
      * @return array<string>
@@ -447,6 +749,7 @@ class ModularServiceProvider extends PackageServiceProvider
             DependencyResolver::class,
             ModuleValidator::class,
             DependencyValidator::class,
+            ModuleHealthChecker::class,
             ModuleCache::class,
             ModuleGenerator::class,
             StubProcessor::class,
@@ -459,6 +762,10 @@ class ModularServiceProvider extends PackageServiceProvider
             ArchiveHandler::class,
             ModuleBackup::class,
             ModuleInstaller::class,
+            BridgeManager::class,
+            'modular.bridges',
+            LinkRegistry::class,
+            LinkBootstrapper::class,
         ];
     }
 }

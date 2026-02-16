@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture\Exceptions;
 
-use Exception;
-
-class CircularDependencyException extends Exception
+/**
+ * Exception thrown when a circular dependency is detected.
+ */
+class CircularDependencyException extends ModuleException
 {
+    protected int $statusCode = 422;
+
+    protected ?string $errorCode = 'CIRCULAR_DEPENDENCY';
+
     /**
      * @param  array<string>  $cycle
      */
@@ -16,7 +21,10 @@ class CircularDependencyException extends Exception
         ?string $message = null,
     ) {
         $cyclePath = implode(' → ', $cycle);
-        parent::__construct($message ?? "Circular dependency detected: {$cyclePath}");
+        parent::__construct(
+            message: $message ?? "Circular dependency detected: {$cyclePath}",
+            context: ['cycle' => $cycle, 'cycle_path' => $cyclePath],
+        );
     }
 
     /**
@@ -39,7 +47,7 @@ class CircularDependencyException extends Exception
 
         return new self(
             cycle: $cycles[0] ?? [],
-            message: 'Multiple circular dependencies detected: ' . implode('; ', $cycleStrings)
+            message: 'Multiple circular dependencies detected: '.implode('; ', $cycleStrings)
         );
     }
 

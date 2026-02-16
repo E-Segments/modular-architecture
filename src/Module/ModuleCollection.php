@@ -91,6 +91,7 @@ class ModuleCollection extends Collection
 
     /**
      * Get modules that the given module depends on.
+     * Uses hash set (array_flip) for O(1) lookups instead of O(n) in_array.
      */
     public function dependenciesOf(string $moduleName): self
     {
@@ -100,9 +101,10 @@ class ModuleCollection extends Collection
         }
 
         $requires = array_keys($module->getRequires());
+        $requiresSet = array_flip($requires); // O(d) to build, O(1) per lookup
 
-        return $this->filter(function (Module $m) use ($requires) {
-            return in_array($m->getName(), $requires, true);
+        return $this->filter(function (Module $m) use ($requiresSet) {
+            return isset($requiresSet[$m->getName()]);
         });
     }
 

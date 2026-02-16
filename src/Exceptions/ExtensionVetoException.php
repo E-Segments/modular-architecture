@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture\Exceptions;
 
-use Exception;
-
 /**
  * Exception thrown when an extension handler vetoes a module operation.
  */
-class ExtensionVetoException extends Exception
+class ExtensionVetoException extends ModuleException
 {
+    protected int $statusCode = 422;
+
+    protected ?string $errorCode = 'EXTENSION_VETO';
+
     /**
      * @param  array<string>  $errors
      */
@@ -21,7 +23,16 @@ class ExtensionVetoException extends Exception
         public readonly ?string $interruptedBy = null,
         string $message = '',
     ) {
-        parent::__construct($message);
+        parent::__construct(
+            message: $message,
+            context: [
+                'module' => $moduleName,
+                'operation' => $operation,
+                'errors' => $errors,
+                'interrupted_by' => $interruptedBy,
+            ],
+        );
+        $this->setModuleName($moduleName);
     }
 
     /**
@@ -34,7 +45,7 @@ class ExtensionVetoException extends Exception
         array $errors = [],
         ?string $interruptedBy = null,
     ): self {
-        $errorMsg = empty($errors) ? '' : ' Errors: ' . implode(', ', $errors);
+        $errorMsg = empty($errors) ? '' : ' Errors: '.implode(', ', $errors);
         $vetoMsg = $interruptedBy ? " Vetoed by: {$interruptedBy}" : '';
 
         return new self(
@@ -56,7 +67,7 @@ class ExtensionVetoException extends Exception
         array $errors = [],
         ?string $interruptedBy = null,
     ): self {
-        $errorMsg = empty($errors) ? '' : ' Errors: ' . implode(', ', $errors);
+        $errorMsg = empty($errors) ? '' : ' Errors: '.implode(', ', $errors);
         $vetoMsg = $interruptedBy ? " Vetoed by: {$interruptedBy}" : '';
 
         return new self(

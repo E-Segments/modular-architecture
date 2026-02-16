@@ -18,12 +18,12 @@ class DependencyResolverTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->resolver = new DependencyResolver();
+        $this->resolver = new DependencyResolver;
     }
 
     public function test_resolves_modules_in_dependency_order(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
 
         // C depends on B, B depends on A
         $collection->put('A', $this->createModule('A'));
@@ -47,7 +47,7 @@ class DependencyResolverTest extends TestCase
 
     public function test_detects_circular_dependencies(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
 
         // A -> B -> C -> A (cycle)
         $collection->put('A', $this->createModule('A', ['C' => '^1.0']));
@@ -63,7 +63,7 @@ class DependencyResolverTest extends TestCase
     {
         $this->expectException(CircularDependencyException::class);
 
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
 
         $collection->put('A', $this->createModule('A', ['B' => '^1.0']));
         $collection->put('B', $this->createModule('B', ['A' => '^1.0']));
@@ -73,7 +73,7 @@ class DependencyResolverTest extends TestCase
 
     public function test_handles_empty_collection(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $resolved = $this->resolver->resolve($collection);
 
         $this->assertTrue($resolved->isEmpty());
@@ -81,7 +81,7 @@ class DependencyResolverTest extends TestCase
 
     public function test_handles_no_dependencies(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
 
         $collection->put('A', $this->createModule('A'));
         $collection->put('B', $this->createModule('B'));
@@ -94,7 +94,7 @@ class DependencyResolverTest extends TestCase
 
     public function test_ignores_missing_dependencies(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
 
         // B requires NonExistent which is not in the collection
         $collection->put('A', $this->createModule('A'));
@@ -107,7 +107,7 @@ class DependencyResolverTest extends TestCase
 
     public function test_would_create_cycle_check(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
 
         $collection->put('A', $this->createModule('A'));
         $collection->put('B', $this->createModule('B', ['A' => '^1.0']));
@@ -125,7 +125,7 @@ class DependencyResolverTest extends TestCase
 
     protected function createModule(string $name, array $requires = []): Module
     {
-        $path = $this->getTestModulesPath() . '/' . $name;
+        $path = $this->getTestModulesPath().'/'.$name;
         $this->app['files']->ensureDirectoryExists($path);
 
         $manifest = new ModuleManifest(
@@ -136,7 +136,7 @@ class DependencyResolverTest extends TestCase
         );
 
         $this->app['files']->put(
-            $path . '/module.json',
+            $path.'/module.json',
             $manifest->toJson()
         );
 

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture\Module;
 
+use Esegments\Core\Concerns\Makeable;
+use Esegments\Core\Contracts\Arrayable;
 use Esegments\ModularArchitecture\Contracts\ModuleContract;
 use Esegments\ModularArchitecture\Exceptions\InvalidManifestException;
 use Esegments\ModularArchitecture\Exceptions\ProtectedModuleException;
-use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 use JsonSerializable;
 
@@ -16,6 +17,8 @@ use JsonSerializable;
  */
 class Module implements Arrayable, JsonSerializable, ModuleContract
 {
+    use Makeable;
+
     protected bool $enabled = true;
 
     protected bool $protected = false;

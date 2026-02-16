@@ -124,34 +124,7 @@ class CommandsTest extends TestCase
             ->expectsOutputToContain('Blog');
     }
 
-    public function test_graph_command_text_format(): void
-    {
-        $this->createTestModule('Core');
-        $this->createTestModule('Blog', ['requires' => ['Core' => '^1.0']]);
-
-        $this->artisan('modular:graph')
-            ->assertSuccessful()
-            ->expectsOutputToContain('Core')
-            ->expectsOutputToContain('Blog');
-    }
-
-    public function test_graph_command_mermaid_format(): void
-    {
-        $this->createTestModule('Core');
-        $this->createTestModule('Blog', ['requires' => ['Core' => '^1.0']]);
-
-        $this->artisan('modular:graph', ['--format' => 'mermaid'])
-            ->assertSuccessful();
-    }
-
-    public function test_graph_command_dot_format(): void
-    {
-        $this->createTestModule('Core');
-        $this->createTestModule('Blog', ['requires' => ['Core' => '^1.0']]);
-
-        $this->artisan('modular:graph', ['--format' => 'dot'])
-            ->assertSuccessful();
-    }
+    // Note: Graph command tests are now in esegments/modular-architecture-graph package
 
     public function test_cache_command(): void
     {

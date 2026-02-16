@@ -19,8 +19,8 @@ class FilesystemStorageTest extends TestCase
     {
         parent::setUp();
 
-        $this->statesFile = $this->getTestModulesPath() . '/states.json';
-        $this->metadataFile = $this->getTestModulesPath() . '/metadata.json';
+        $this->statesFile = $this->getTestModulesPath().'/states.json';
+        $this->metadataFile = $this->getTestModulesPath().'/metadata.json';
 
         $this->storage = new FilesystemStorage(
             files: $this->app['files'],

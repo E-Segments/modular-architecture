@@ -54,7 +54,7 @@ class StubProcessor
      */
     public function getStubPath(string $stubName): string
     {
-        return rtrim($this->stubPath, '/') . '/' . ltrim($stubName, '/');
+        return rtrim($this->stubPath, '/').'/'.ltrim($stubName, '/');
     }
 
     /**

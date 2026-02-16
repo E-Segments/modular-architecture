@@ -91,7 +91,7 @@ class ModuleCache
     {
         $data = $this->dehydrateForCache($modules);
 
-        $content = '<?php return ' . var_export($data, true) . ';';
+        $content = '<?php return '.var_export($data, true).';';
 
         $this->files->ensureDirectoryExists(dirname($this->getManifestPath()));
         $this->files->put($this->getManifestPath(), $content);
@@ -132,7 +132,7 @@ class ModuleCache
      */
     protected function getManifestPath(): string
     {
-        return $this->cachePath . '/' . self::MANIFEST_FILE;
+        return $this->cachePath.'/'.self::MANIFEST_FILE;
     }
 
     /**
@@ -163,7 +163,7 @@ class ModuleCache
      */
     protected function hydrateFromCache(array $data): ModuleCollection
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
 
         foreach ($data as $name => $moduleData) {
             try {

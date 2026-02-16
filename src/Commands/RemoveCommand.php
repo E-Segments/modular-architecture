@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture\Commands;
 
+use Esegments\LaravelExtensions\Facades\Extensions;
+use Esegments\ModularArchitecture\Extensions\Points\BeforeModuleUninstall;
+use Esegments\ModularArchitecture\Extensions\Points\ModuleUninstalled;
 use Esegments\ModularArchitecture\Modular;
 use Illuminate\Console\Command;
 
@@ -48,6 +51,29 @@ class RemoveCommand extends Command
             return Command::FAILURE;
         }
 
+        // Dispatch BeforeModuleUninstall extension point (interruptible)
+        $beforeUninstall = new BeforeModuleUninstall($module, $name, $force);
+        $canProceed = Extensions::dispatchInterruptible($beforeUninstall);
+
+        if (! $canProceed) {
+            $handler = $beforeUninstall->getInterruptedBy();
+            $this->components->error('Removal was cancelled by an extension handler.');
+            if ($handler) {
+                $this->line("  Interrupted by: {$handler}");
+            }
+
+            return Command::FAILURE;
+        }
+
+        if ($beforeUninstall->hasErrors()) {
+            $this->components->error('Removal blocked:');
+            foreach ($beforeUninstall->errors as $error) {
+                $this->line("  - {$error}");
+            }
+
+            return Command::FAILURE;
+        }
+
         // Confirm deletion
         $confirmed = confirm(
             label: "Are you sure you want to permanently remove module [{$name}]?",
@@ -63,6 +89,9 @@ class RemoveCommand extends Command
         try {
             $path = $module->getPath();
             $modular->delete($name, $force);
+
+            // Dispatch ModuleUninstalled extension point (graceful - errors shouldn't block completed removal)
+            Extensions::gracefully()->dispatch(new ModuleUninstalled($name, $path));
 
             $this->components->info("Module [{$name}] removed successfully.");
             $this->line("Deleted: {$path}");

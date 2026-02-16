@@ -54,7 +54,7 @@ class GitHubClientTest extends TestCase
 
     public function test_generates_archive_url(): void
     {
-        $client = new GitHubClient();
+        $client = new GitHubClient;
 
         $url = $client->getArchiveUrl('esegments', 'blog-module', 'main');
 
@@ -66,7 +66,7 @@ class GitHubClientTest extends TestCase
 
     public function test_generates_release_archive_url(): void
     {
-        $client = new GitHubClient();
+        $client = new GitHubClient;
 
         $url = $client->getReleaseArchiveUrl('esegments', 'blog-module', 'v1.0.0');
 

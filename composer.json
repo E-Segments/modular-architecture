@@ -18,12 +18,25 @@
             "email": "hello@esegments.com"
         }
     ],
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../core"
+        },
+        {
+            "type": "path",
+            "url": "../laravel-extensions"
+        }
+    ],
     "require": {
         "php": "^8.2",
-        "illuminate/support": "^11.0|^12.0",
+        "esegments/core": "*@dev",
+        "esegments/laravel-extensions": "*@dev",
         "illuminate/console": "^11.0|^12.0",
         "illuminate/filesystem": "^11.0|^12.0",
+        "illuminate/support": "^11.0|^12.0",
         "laravel/prompts": "^0.3",
+        "spatie/laravel-data": "^4.0",
         "spatie/laravel-package-tools": "^1.16",
         "composer/semver": "^3.0",
         "marcj/topsort": "^2.0",
@@ -35,8 +48,8 @@
         "laravel/pint": "^1.0"
     },
     "suggest": {
-        "esegments/laravel-extensions": "Required for module lifecycle extension points (^1.0)",
-        "spatie/packagist-api": "Required for GitHub/Packagist installation (^2.1)"
+        "spatie/packagist-api": "Required for GitHub/Packagist installation (^2.1)",
+        "esegments/modular-architecture-graph": "For module dependency graph visualization"
     },
     "autoload": {
         "psr-4": {
@@ -65,7 +78,8 @@
                 "Esegments\\ModularArchitecture\\ModularServiceProvider"
             ],
             "aliases": {
-                "Modular": "Esegments\\ModularArchitecture\\Facades\\Modular"
+                "Modular": "Esegments\\ModularArchitecture\\Facades\\Modular",
+                "Links": "Esegments\\ModularArchitecture\\Facades\\Links"
             }
         }
     },

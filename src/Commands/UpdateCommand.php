@@ -105,7 +105,7 @@ class UpdateCommand extends Command
 
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            $this->components->error('Update failed: ' . $e->getMessage());
+            $this->components->error('Update failed: '.$e->getMessage());
 
             return Command::FAILURE;
         }

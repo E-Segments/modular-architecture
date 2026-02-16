@@ -64,7 +64,7 @@ class StorageMigrateCommand extends Command
 
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            $this->components->error('Migration failed: ' . $e->getMessage());
+            $this->components->error('Migration failed: '.$e->getMessage());
 
             return Command::FAILURE;
         }

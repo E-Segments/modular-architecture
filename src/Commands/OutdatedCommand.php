@@ -68,7 +68,7 @@ class OutdatedCommand extends Command
             return Command::SUCCESS;
         }
 
-        $this->components->warn(count($updates) . ' outdated module(s) found:');
+        $this->components->warn(count($updates).' outdated module(s) found:');
         $this->newLine();
 
         $rows = [];

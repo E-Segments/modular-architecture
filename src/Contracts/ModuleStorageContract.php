@@ -38,7 +38,7 @@ interface ModuleStorageContract
     /**
      * Set module metadata.
      *
-     * @param array<string, mixed> $metadata
+     * @param  array<string, mixed>  $metadata
      */
     public function setMetadata(string $name, array $metadata): void;
 

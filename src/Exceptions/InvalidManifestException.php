@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Esegments\ModularArchitecture\Exceptions;
 
-use Exception;
-
-class InvalidManifestException extends Exception
+/**
+ * Exception thrown when a module manifest is invalid.
+ */
+class InvalidManifestException extends ModuleException
 {
+    protected int $statusCode = 422;
+
+    protected ?string $errorCode = 'INVALID_MANIFEST';
+
     /**
      * @param  array<string>  $errors
      */
@@ -16,9 +21,13 @@ class InvalidManifestException extends Exception
         public readonly array $errors = [],
         ?string $message = null,
     ) {
-        $errorList = ! empty($errors) ? ': ' . implode(', ', $errors) : '';
+        $errorList = ! empty($errors) ? ': '.implode(', ', $errors) : '';
         parent::__construct(
-            $message ?? "Invalid module.json at [{$modulePath}]{$errorList}"
+            message: $message ?? "Invalid module.json at [{$modulePath}]{$errorList}",
+            context: [
+                'path' => $modulePath,
+                'errors' => $errors,
+            ],
         );
     }
 
@@ -47,7 +56,7 @@ class InvalidManifestException extends Exception
         return new self(
             modulePath: $path,
             errors: $missing,
-            message: "Missing required fields in module.json at [{$path}]: " . implode(', ', $missing),
+            message: "Missing required fields in module.json at [{$path}]: ".implode(', ', $missing),
         );
     }
 }

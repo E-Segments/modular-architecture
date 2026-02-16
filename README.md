@@ -405,6 +405,155 @@ Modular::refresh();
 
 ---
 
+## Framework Bridges
+
+Bridges automatically discover and register framework-specific components from your modules. Enable only the bridges you need.
+
+### Enable Bridges
+
+```env
+# Core framework bridges
+MODULAR_BRIDGE_ROUTES=true
+MODULAR_BRIDGE_BLADE=true
+MODULAR_BRIDGE_MIGRATIONS=true
+MODULAR_BRIDGE_TRANSLATIONS=true
+MODULAR_BRIDGE_EVENTS=true
+MODULAR_BRIDGE_COMMANDS=true
+
+# Model/Auth bridges
+MODULAR_BRIDGE_OBSERVERS=true
+MODULAR_BRIDGE_POLICIES=true
+MODULAR_BRIDGE_MIDDLEWARE=true
+MODULAR_BRIDGE_SERVICES=true
+
+# External framework bridges
+MODULAR_BRIDGE_LIVEWIRE=true
+MODULAR_BRIDGE_FILAMENT=true
+MODULAR_BRIDGE_SCHEDULE=true
+
+# Bridge caching for production
+MODULAR_BRIDGE_CACHE=true
+```
+
+### Available Bridges
+
+| Bridge | Discovery Path | Auto-Registers |
+|--------|----------------|----------------|
+| **Routes** | `routes/*.php` | Web/API routes with module prefix |
+| **Blade** | `resources/views/` | View namespace `module-name::view` |
+| **Migrations** | `database/migrations/` | Migrations with Laravel migrator |
+| **Translations** | `lang/*.php`, `lang/*.json` | Trans namespace `module-name::key` |
+| **Events** | `app/Listeners/`, `app/Subscribers/` | Event listeners & subscribers |
+| **Commands** | `app/Console/Commands/` | Artisan commands |
+| **Observers** | `app/Observers/` | Model observers (by convention) |
+| **Policies** | `app/Policies/` | Authorization policies |
+| **Middleware** | `app/Http/Middleware/` | Aliased as `module.name` |
+| **Services** | `app/Contracts/`, `app/Services/` | Contract -> Implementation bindings |
+| **Livewire** | `app/Livewire/` | Components as `<livewire:module::name />` |
+| **Filament** | `app/Filament/` | Resources, Pages, Widgets, Clusters |
+| **Schedule** | `app/Console/Schedule.php` | Scheduled tasks |
+
+### Bridge Usage Examples
+
+#### Routes Bridge
+```php
+// Modules/Products/routes/web.php
+Route::get('/products', [ProductController::class, 'index']);
+
+// Accessible at: /products (with 'products' prefix if enabled)
+// Named: products.index
+```
+
+#### Blade Bridge
+```blade
+{{-- Use module views --}}
+@include('products::partials.card')
+
+{{-- Use module components --}}
+<x-products::button />
+```
+
+#### Translations Bridge
+```php
+// Modules/Products/lang/en/messages.php
+return ['created' => 'Product created'];
+
+// Usage
+trans('products::messages.created');
+__('products::messages.created');
+```
+
+#### Observers Bridge
+```php
+// Modules/Products/app/Observers/ProductObserver.php
+// Auto-registers to observe Product model (by naming convention)
+```
+
+#### Services Bridge
+```php
+// Modules/Products/app/Contracts/ProductServiceContract.php
+interface ProductServiceContract {
+    public function findById(int $id): ?Product;
+}
+
+// Modules/Products/app/Services/ProductService.php
+class ProductService implements ProductServiceContract { }
+
+// Auto-bound: resolve(ProductServiceContract::class) -> ProductService
+```
+
+#### Livewire Bridge
+```php
+// Modules/Products/app/Livewire/ProductTable.php
+// Registered as: <livewire:products::product-table />
+```
+
+#### Filament Bridge
+```php
+// In your PanelProvider
+public function panel(Panel $panel): Panel
+{
+    $bridge = app(FilamentBridge::class);
+
+    return $panel
+        ->resources($bridge->getResources())
+        ->pages($bridge->getPages())
+        ->widgets($bridge->getWidgets());
+}
+```
+
+### Bridge CLI Commands
+
+```bash
+# List all bridges and their status
+php artisan modular:bridges
+
+# Inspect a specific bridge
+php artisan modular:bridges:inspect blade
+
+# Cache bridges for production
+php artisan modular:bridges:cache
+
+# Clear bridge cache
+php artisan modular:bridges:clear
+```
+
+### Bridge Output Example
+
+```
+┌─────────────┬───────────┬──────────┬─────────┐
+│ Bridge      │ Available │ Status   │ Modules │
+├─────────────┼───────────┼──────────┼─────────┤
+│ blade       │ ✓         │ Enabled  │ 5       │
+│ routes      │ ✓         │ Enabled  │ 3       │
+│ livewire    │ ✓         │ Enabled  │ 2       │
+│ filament    │ ✓         │ Disabled │ -       │
+│ migrations  │ ✓         │ Enabled  │ 4       │
+└─────────────┴───────────┴──────────┴─────────┘
+```
+
+---
+
 ## Extension Points (Optional)
 
 Install `esegments/laravel-extensions` to hook into module lifecycle events:

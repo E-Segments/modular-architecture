@@ -25,7 +25,7 @@ class CacheCommand extends Command
 
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            $this->components->error('Failed to build cache: ' . $e->getMessage());
+            $this->components->error('Failed to build cache: '.$e->getMessage());
 
             return Command::FAILURE;
         }

@@ -13,7 +13,7 @@ class ModuleCollectionTest extends TestCase
 {
     public function test_filters_enabled_modules(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('A', $this->createModule('A'));
         $collection->put('B', $this->createModule('B'));
 
@@ -28,7 +28,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_filters_disabled_modules(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('A', $this->createModule('A'));
         $collection->put('B', $this->createModule('B'));
 
@@ -42,7 +42,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_filters_protected_modules(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $a = $this->createModule('A');
         $a->setProtected(true);
         $collection->put('A', $a);
@@ -56,7 +56,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_sorts_by_priority(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('A', $this->createModule('A', priority: 10));
         $collection->put('B', $this->createModule('B', priority: 0));
         $collection->put('C', $this->createModule('C', priority: 5));
@@ -69,7 +69,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_sorts_by_priority_descending(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('A', $this->createModule('A', priority: 10));
         $collection->put('B', $this->createModule('B', priority: 0));
         $collection->put('C', $this->createModule('C', priority: 5));
@@ -82,7 +82,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_finds_by_name(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('Blog', $this->createModule('Blog'));
 
         $found = $collection->findByName('Blog');
@@ -95,7 +95,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_finds_by_alias(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('UserManagement', $this->createModule('UserManagement', alias: 'users'));
 
         $found = $collection->findByAlias('users');
@@ -106,7 +106,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_finds_modules_depending_on(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('Core', $this->createModule('Core'));
         $collection->put('Blog', $this->createModule('Blog', requires: ['Core' => '^1.0']));
         $collection->put('Products', $this->createModule('Products', requires: ['Core' => '^1.0']));
@@ -122,7 +122,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_finds_dependencies_of(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('Core', $this->createModule('Core'));
         $collection->put('Users', $this->createModule('Users'));
         $collection->put('Blog', $this->createModule('Blog', requires: ['Core' => '^1.0', 'Users' => '^1.0']));
@@ -136,7 +136,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_gets_all_providers(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('A', $this->createModule('A', providers: ['AProvider']));
         $collection->put('B', $this->createModule('B', providers: ['BProvider1', 'BProvider2']));
 
@@ -150,7 +150,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_all_providers_excludes_disabled_modules(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('A', $this->createModule('A', providers: ['AProvider']));
         $b = $this->createModule('B', providers: ['BProvider']);
         $b->disable();
@@ -165,7 +165,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_gets_names_as_array(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('Blog', $this->createModule('Blog'));
         $collection->put('Products', $this->createModule('Products'));
 
@@ -176,7 +176,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_gets_aliases_as_array(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('Blog', $this->createModule('Blog', alias: 'blog'));
         $collection->put('Products', $this->createModule('Products', alias: 'products'));
 
@@ -187,7 +187,7 @@ class ModuleCollectionTest extends TestCase
 
     public function test_checks_if_module_is_enabled(): void
     {
-        $collection = new ModuleCollection();
+        $collection = new ModuleCollection;
         $collection->put('A', $this->createModule('A'));
         $b = $this->createModule('B');
         $b->disable();
@@ -205,7 +205,7 @@ class ModuleCollectionTest extends TestCase
         array $requires = [],
         array $providers = [],
     ): Module {
-        $path = $this->getTestModulesPath() . '/' . $name;
+        $path = $this->getTestModulesPath().'/'.$name;
         $this->app['files']->ensureDirectoryExists($path);
 
         $manifest = new ModuleManifest(
@@ -218,7 +218,7 @@ class ModuleCollectionTest extends TestCase
         );
 
         $this->app['files']->put(
-            $path . '/module.json',
+            $path.'/module.json',
             $manifest->toJson()
         );
 
