@@ -1,0 +1,9 @@
+- title: Home
+  url: /
+
+- title: Documentation
+  url: /docs/
+
+- title: GitHub
+  url: https://github.com/E-Segments/modular-architecture
+  external: true
