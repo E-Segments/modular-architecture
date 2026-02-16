@@ -5,6 +5,7 @@ Build scalable Laravel applications with self-contained modules.
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D8.2-8892BF.svg)](https://php.net/)
 [![Laravel](https://img.shields.io/badge/laravel-11.x%20%7C%2012.x-FF2D20.svg)](https://laravel.com)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-e--segments.github.io-blue.svg)](https://e-segments.github.io/modular-architecture/)
 
 ---
 
@@ -678,6 +679,12 @@ composer test
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## Documentation
+
+📖 **Full documentation available at: [e-segments.github.io/modular-architecture](https://e-segments.github.io/modular-architecture/)**
 
 ---
 
