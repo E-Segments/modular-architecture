@@ -1,9 +1,26 @@
-- title: Home
-  url: /
+# Main navigation links
+main:
+  - title: "Home"
+    url: "/"
+  - title: "Docs"
+    url: "/docs/getting-started/"
+  - title: "Changelog"
+    url: "/changelog/"
 
-- title: Documentation
-  url: /docs/
+# Documentation sidebar
+docs:
+  - title: "Getting Started"
+    url: "/docs/getting-started/"
+  - title: "Bridges"
+    url: "/docs/bridges/"
+  - title: "Link Registry"
+    url: "/docs/link-registry/"
+  - title: "Commands"
+    url: "/docs/commands/"
+  - title: "Configuration"
+    url: "/docs/configuration/"
 
-- title: GitHub
-  url: https://github.com/E-Segments/modular-architecture
-  external: true
+# Call to action button in header
+cta:
+  title: "Get Started"
+  url: "/docs/getting-started/"

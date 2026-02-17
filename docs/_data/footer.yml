@@ -1,0 +1,27 @@
+# Footer configuration
+copyright: "2024"
+
+# Footer columns
+columns:
+  - title: "Package"
+    links:
+      - title: "Features"
+        url: "/#features"
+      - title: "Documentation"
+        url: "/docs/getting-started/"
+      - title: "GitHub"
+        url: "https://github.com/E-Segments/modular-architecture"
+
+  - title: "Resources"
+    links:
+      - title: "Changelog"
+        url: "/changelog/"
+      - title: "Issues"
+        url: "https://github.com/E-Segments/modular-architecture/issues"
+
+  - title: "E-Segments"
+    links:
+      - title: "Laravel Extensions"
+        url: "https://e-segments.github.io/laravel-extensions/"
+      - title: "Minima+"
+        url: "https://e-segments.github.io/minima-plus/"
