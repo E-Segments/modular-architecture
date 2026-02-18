@@ -89,6 +89,7 @@ Modules/Blog/
 
 ### button.blade.php
 
+{% raw %}
 ```blade
 @props(['type' => 'primary', 'size' => 'md'])
 
@@ -96,6 +97,7 @@ Modules/Blog/
     {{ $slot }}
 </button>
 ```
+{% endraw %}
 
 Usage:
 
@@ -176,6 +178,7 @@ The bridge integrates with Laravel's view caching automatically.
 
 ### 1. Use Namespaced Views
 
+{% raw %}
 ```blade
 {{-- Good --}}
 @include('blog::partials.sidebar')
@@ -183,9 +186,11 @@ The bridge integrates with Laravel's view caching automatically.
 {{-- Avoid --}}
 @include('modules.blog.partials.sidebar')
 ```
+{% endraw %}
 
 ### 2. Component Slots
 
+{% raw %}
 ```blade
 {{-- resources/views/components/card.blade.php --}}
 <div class="card">
@@ -196,6 +201,7 @@ The bridge integrates with Laravel's view caching automatically.
     @endif
 </div>
 ```
+{% endraw %}
 
 Usage:
 

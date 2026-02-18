@@ -253,9 +253,11 @@ $url = module_asset('blog', 'css/blog.css');
 ```
 
 In Blade:
+{% raw %}
 ```blade
 <link rel="stylesheet" href="{{ module_asset('blog', 'css/blog.css') }}">
 ```
+{% endraw %}
 
 ---
 
@@ -369,7 +371,9 @@ __('orders::messages.shipped');
 ```
 
 In Blade:
+{% raw %}
 ```blade
 {{ __('orders::messages.created') }}
 @lang('orders::messages.shipped')
 ```
+{% endraw %}

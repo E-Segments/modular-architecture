@@ -52,6 +52,7 @@ class PostTable extends Component
 
 Components are prefixed with the module name in kebab-case:
 
+{% raw %}
 ```blade
 {{-- Full component tag --}}
 <livewire:blog::post-table />
@@ -62,6 +63,7 @@ Components are prefixed with the module name in kebab-case:
 {{-- Nested components --}}
 <livewire:blog::comments.comment-list :post-id="$post->id" />
 ```
+{% endraw %}
 
 ## Component Naming
 
@@ -87,10 +89,11 @@ Modules/Blog/
 
 ### post-table.blade.php
 
+{% raw %}
 ```blade
 <div>
     <input wire:model.live="search" placeholder="Search posts...">
-    
+
     <table>
         @foreach($posts as $post)
             <tr>
@@ -99,10 +102,11 @@ Modules/Blog/
             </tr>
         @endforeach
     </table>
-    
+
     {{ $posts->links() }}
 </div>
 ```
+{% endraw %}
 
 ## Full-Page Components
 

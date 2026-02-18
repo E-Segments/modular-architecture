@@ -198,11 +198,11 @@ Available placeholders:
 
 | Variable | Description |
 |----------|-------------|
-| `{{ namespace }}` | Full namespace |
-| `{{ class }}` | Class name |
-| `{{ module }}` | Module name |
-| `{{ module_lower }}` | Module name (lowercase) |
-| `{{ module_snake }}` | Module name (snake_case) |
+| `{% raw %}{{ namespace }}{% endraw %}` | Full namespace |
+| `{% raw %}{{ class }}{% endraw %}` | Class name |
+| `{% raw %}{{ module }}{% endraw %}` | Module name |
+| `{% raw %}{{ module_lower }}{% endraw %}` | Module name (lowercase) |
+| `{% raw %}{{ module_snake }}{% endraw %}` | Module name (snake_case) |
 
 ## Scaffolding Configuration
 
