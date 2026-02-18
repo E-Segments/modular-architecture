@@ -6,6 +6,8 @@ main:
     url: "/docs/getting-started/"
   - title: "CLI"
     url: "/cli/"
+  - title: "API"
+    url: "/docs/facade-api/"
   - title: "Changelog"
     url: "/changelog/"
 
@@ -48,7 +50,7 @@ docs:
         url: "/docs/bridges/livewire/"
       - title: "Filament Bridge"
         url: "/docs/bridges/filament/"
-      - title: "Event Bridge"
+      - title: "Event & Observer"
         url: "/docs/bridges/events/"
       - title: "Other Bridges"
         url: "/docs/bridges/other/"
@@ -73,6 +75,8 @@ docs:
         url: "/docs/storage-caching/"
       - title: "Octane Support"
         url: "/docs/octane/"
+      - title: "Facade API"
+        url: "/docs/facade-api/"
 
 # Call to action button in header
 cta:
