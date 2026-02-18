@@ -1,216 +1,286 @@
 ---
-title: "Configuration"
-description: "All configuration options explained"
-order: 4
+layout: docs
+title: Configuration
+description: Complete configuration reference
 ---
 
-The configuration file `config/modular.php` contains all options for customizing the modular architecture behavior.
+## Publishing Config
 
-## Basic Configuration
+```bash
+php artisan vendor:publish --tag=modular-config
+```
+
+## Full Configuration
 
 ```php
+// config/modular.php
+
 return [
-    // Path to modules directory
-    'path' => base_path('Modules'),
+    /*
+    |--------------------------------------------------------------------------
+    | Module Paths
+    |--------------------------------------------------------------------------
+    |
+    | Directories where modules are located.
+    |
+    */
+    'paths' => [
+        base_path('Modules'),
+    ],
 
-    // Module namespace
-    'namespace' => 'Modules',
+    /*
+    |--------------------------------------------------------------------------
+    | Excluded Directories
+    |--------------------------------------------------------------------------
+    |
+    | Directories to skip during module discovery.
+    |
+    */
+    'exclude' => [
+        'vendor',
+        'node_modules',
+        'tests',
+        '.git',
+    ],
 
-    // Auto-discover modules on boot
-    'auto_discover' => true,
+    /*
+    |--------------------------------------------------------------------------
+    | Protected Modules
+    |--------------------------------------------------------------------------
+    |
+    | Modules that cannot be disabled or removed.
+    |
+    */
+    'protected' => [
+        'Core',
+    ],
 
-    // Cache module discovery
+    /*
+    |--------------------------------------------------------------------------
+    | Storage Configuration
+    |--------------------------------------------------------------------------
+    |
+    | How module state is persisted.
+    |
+    */
+    'storage' => [
+        'driver' => env('MODULAR_STORAGE', 'file'), // 'file' or 'database'
+        'path' => storage_path('modular'),
+        'table' => 'modules',
+        'connection' => null, // null = default connection
+        'auto_create_table' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cache Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Module discovery caching for performance.
+    |
+    */
     'cache' => [
-        'enabled' => env('MODULAR_CACHE', true),
-        'key' => 'modular.modules',
-        'ttl' => 3600, // 1 hour
+        'enabled' => env('MODULAR_CACHE', false),
+        'driver' => env('MODULAR_CACHE_DRIVER', 'file'),
+        'ttl' => 86400, // 24 hours
+        'path' => storage_path('modular/cache'),
+        'prefix' => 'modular',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Discovery Configuration
+    |--------------------------------------------------------------------------
+    */
+    'discovery' => [
+        'auto' => true,
+        'logging' => env('MODULAR_DISCOVERY_LOGGING', false),
+        'max_depth' => 3,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Strict Mode
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, throws exceptions for invalid modules.
+    |
+    */
+    'strict' => env('MODULAR_STRICT', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Debug Mode
+    |--------------------------------------------------------------------------
+    |
+    | Enable verbose logging for debugging.
+    |
+    */
+    'debug' => env('MODULAR_DEBUG', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Command Overrides
+    |--------------------------------------------------------------------------
+    |
+    | Override Laravel's make:* commands to support --module flag.
+    |
+    */
+    'commands' => [
+        'override' => env('MODULAR_OVERRIDE_COMMANDS', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Octane Support
+    |--------------------------------------------------------------------------
+    */
+    'octane' => [
+        'refresh_on_tick' => false,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | GitHub Integration
+    |--------------------------------------------------------------------------
+    |
+    | For installing modules from GitHub repositories.
+    |
+    */
+    'github' => [
+        'token' => env('GITHUB_TOKEN'),
+        'default_branch' => 'main',
+        'timeout' => 30,
+        'verify_ssl' => true,
+        'temp_path' => storage_path('modular/temp'),
+        'backup_path' => storage_path('modular/backups'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scaffolding Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Defaults for module generation.
+    |
+    */
+    'scaffolding' => [
+        'namespace' => 'Modules',
+        'vendor' => null,
+        'author_name' => null,
+        'author_email' => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bridge Configuration
+    |--------------------------------------------------------------------------
+    */
+    'bridges' => [
+        'cache' => [
+            'enabled' => env('MODULAR_BRIDGE_CACHE', false),
+            'driver' => 'file',
+        ],
+
+        'routes' => [
+            'enabled' => true,
+            'prefix' => null,
+            'middleware' => ['web'],
+            'api_prefix' => 'api',
+            'api_middleware' => ['api'],
+        ],
+
+        'blade' => [
+            'enabled' => true,
+        ],
+
+        'livewire' => [
+            'enabled' => true,
+        ],
+
+        'filament' => [
+            'enabled' => true,
+        ],
+
+        'events' => [
+            'enabled' => true,
+        ],
+
+        'migrations' => [
+            'enabled' => true,
+        ],
+
+        'translations' => [
+            'enabled' => true,
+        ],
+
+        'observers' => [
+            'enabled' => true,
+        ],
+
+        'policies' => [
+            'enabled' => true,
+        ],
+
+        'commands' => [
+            'enabled' => true,
+        ],
+
+        'middleware' => [
+            'enabled' => true,
+        ],
+
+        'services' => [
+            'enabled' => true,
+        ],
+
+        'schedule' => [
+            'enabled' => true,
+        ],
+
+        'config' => [
+            'enabled' => false, // Deep merge, disabled by default
+        ],
+
+        'assets' => [
+            'enabled' => true,
+            'symlink' => env('MODULAR_ASSET_SYMLINK', true),
+            'auto_publish' => false,
+        ],
+
+        'link' => [
+            'enabled' => true,
+        ],
     ],
 ];
 ```
 
-## Bridge Configuration
-
-Enable or disable specific bridges:
-
-```php
-'bridges' => [
-    'route' => [
-        'enabled' => true,
-        'prefix' => true,           // Prefix routes with module alias
-        'middleware' => ['web'],    // Default middleware for web routes
-        'api_prefix' => 'api',      // API route prefix
-        'api_middleware' => ['api'],
-        'versioned_api' => true,    // Support versioned APIs
-    ],
-
-    'blade' => [
-        'enabled' => true,
-        'hint_path' => true,        // Register view hints
-        'components' => true,       // Register Blade components
-    ],
-
-    'migration' => [
-        'enabled' => true,
-        'path' => 'database/migrations',
-    ],
-
-    'config' => [
-        'enabled' => true,
-        'merge' => true,            // Deep merge with app config
-        'environment' => true,      // Load environment-specific configs
-    ],
-
-    'translation' => [
-        'enabled' => true,
-        'path' => 'lang',
-    ],
-
-    'command' => [
-        'enabled' => true,
-        'path' => 'app/Commands',
-    ],
-
-    'observer' => [
-        'enabled' => true,
-        'auto_register' => true,    // Auto-detect model observers
-    ],
-
-    'policy' => [
-        'enabled' => true,
-        'auto_register' => true,    // Auto-detect model policies
-    ],
-
-    'service' => [
-        'enabled' => true,
-        'auto_bind' => true,        // Auto-bind contracts to implementations
-    ],
-
-    'livewire' => [
-        'enabled' => true,
-        'prefix' => true,           // Prefix component names
-    ],
-
-    'filament' => [
-        'enabled' => true,
-        'discover_resources' => true,
-        'discover_pages' => true,
-        'discover_widgets' => true,
-    ],
-
-    'asset' => [
-        'enabled' => true,
-        'publish_path' => 'modules',
-        'symlink' => env('MODULAR_ASSET_SYMLINK', false),
-    ],
-
-    'link' => [
-        'enabled' => true,
-        'path' => 'app/Links',
-    ],
-],
-```
-
-## Storage Configuration
-
-Configure how module state is stored:
-
-```php
-'storage' => [
-    'driver' => 'file', // 'file' or 'database'
-
-    'file' => [
-        'path' => storage_path('modular'),
-    ],
-
-    'database' => [
-        'connection' => null, // Use default
-        'table' => 'module_states',
-    ],
-],
-```
-
-## Extension Points
-
-Configure module lifecycle extensions:
-
-```php
-'extensions' => [
-    'before_install' => [],
-    'after_install' => [],
-    'before_enable' => [],
-    'after_enable' => [],
-    'before_disable' => [],
-    'after_disable' => [],
-    'before_uninstall' => [],
-    'after_uninstall' => [],
-],
-```
-
-## Generator Configuration
-
-Configure code generators:
-
-```php
-'generators' => [
-    'paths' => [
-        'model' => 'app/Models',
-        'controller' => 'app/Http/Controllers',
-        'service' => 'app/Services',
-        'repository' => 'app/Repositories',
-        'dto' => 'app/DTOs',
-        'action' => 'app/Actions',
-        'observer' => 'app/Observers',
-        'policy' => 'app/Policies',
-        'enum' => 'app/Enums',
-        'event' => 'app/Events',
-        'listener' => 'app/Listeners',
-        'job' => 'app/Jobs',
-        'command' => 'app/Commands',
-        'middleware' => 'app/Http/Middleware',
-        'request' => 'app/Http/Requests',
-        'resource' => 'app/Http/Resources',
-    ],
-
-    'stubs' => [
-        'path' => null, // Use package stubs
-        'custom' => [],  // Custom stub overrides
-    ],
-],
-```
-
-## Health Check Configuration
-
-Configure health checks:
-
-```php
-'health' => [
-    'checks' => [
-        'manifest' => true,
-        'provider' => true,
-        'config' => true,
-        'migrations' => true,
-        'dependencies' => true,
-    ],
-],
-```
-
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `MODULAR_CACHE` | Enable module caching | `true` |
-| `MODULAR_ASSET_SYMLINK` | Use symlinks for assets | `false` |
-| `MODULAR_DEBUG` | Enable debug logging | `false` |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MODULAR_STORAGE` | `file` | Storage driver |
+| `MODULAR_CACHE` | `false` | Enable discovery cache |
+| `MODULAR_CACHE_DRIVER` | `file` | Cache driver |
+| `MODULAR_STRICT` | `false` | Strict mode |
+| `MODULAR_DEBUG` | `false` | Debug logging |
+| `MODULAR_OVERRIDE_COMMANDS` | `true` | Override Laravel commands |
+| `MODULAR_BRIDGE_CACHE` | `false` | Cache bridge discovery |
+| `MODULAR_ASSET_SYMLINK` | `true` | Symlink assets in dev |
+| `GITHUB_TOKEN` | `null` | GitHub API token |
 
-## Artisan Commands
+## Production Optimization
+
+For production, enable caching:
+
+```env
+MODULAR_CACHE=true
+MODULAR_BRIDGE_CACHE=true
+```
+
+Then run:
 
 ```bash
-# Publish config
-php artisan vendor:publish --tag=modular-config
-
-# Clear and rebuild cache
 php artisan modular:cache
-
-# Clear cache only
-php artisan modular:cache --clear
+php artisan modular:bridges:cache
 ```

@@ -1,199 +1,145 @@
 ---
-title: "Framework Bridges"
-description: "Auto-discovery bridges for Laravel components"
-order: 2
+layout: docs
+title: Framework Bridges
+description: Auto-register module components with Laravel
 ---
 
-Framework Bridges automatically discover and register Laravel components from your modules. Each bridge handles a specific type of resource.
+## Overview
+
+Bridges automatically discover and register module components with their respective Laravel ecosystems. Instead of manually registering routes, views, or commands in your service provider, bridges handle this automatically.
 
 ## Available Bridges
 
-| Bridge | Discovers | Path Pattern |
-|--------|-----------|--------------|
-| RouteBridge | Routes | `routes/*.php`, `routes/api/v*.php` |
-| BladeBridge | Views & Components | `resources/views/**/*.blade.php` |
-| MigrationBridge | Migrations | `database/migrations/*.php` |
-| ConfigBridge | Configuration | `config/*.php` |
-| TranslationBridge | Translations | `lang/*.php`, `lang/*.json` |
-| CommandBridge | Artisan Commands | `app/Commands/*.php` |
-| ObserverBridge | Model Observers | `app/Observers/*Observer.php` |
-| PolicyBridge | Model Policies | `app/Policies/*Policy.php` |
-| ServiceBridge | Service Bindings | `app/Contracts/*Contract.php` |
-| EventBridge | Event Classes | `app/Events/*.php` |
-| ScheduleBridge | Scheduled Tasks | `app/Console/Kernel.php` |
-| LivewireBridge | Livewire Components | `app/Livewire/*.php` |
-| FilamentBridge | Filament Resources | `app/Filament/**/*.php` |
-| AssetBridge | Static Assets | `public/`, `resources/assets/` |
-| LinkBridge | Link Definitions | `app/Links/*.php` |
+| Bridge | Purpose | Auto-discovers |
+|--------|---------|----------------|
+| **RouteBridge** | HTTP routing | `routes/*.php` |
+| **BladeBridge** | Views & components | `resources/views/`, `app/View/Components/` |
+| **LivewireBridge** | Livewire components | `app/Livewire/` |
+| **FilamentBridge** | Filament resources | `app/Filament/` |
+| **EventBridge** | Listeners & subscribers | `app/Listeners/`, `app/Subscribers/` |
+| **MigrationBridge** | Database migrations | `database/migrations/` |
+| **TranslationBridge** | Language files | `lang/` |
+| **ObserverBridge** | Model observers | `app/Observers/` |
+| **PolicyBridge** | Authorization policies | `app/Policies/` |
+| **CommandBridge** | Artisan commands | `app/Console/Commands/` |
+| **MiddlewareBridge** | HTTP middleware | `app/Http/Middleware/` |
+| **ServiceBridge** | Service bindings | `app/Contracts/`, `app/Services/` |
+| **ScheduleBridge** | Scheduled tasks | `app/Console/Schedule.php` |
+| **ConfigBridge** | Configuration | `config/*.php` |
+| **AssetBridge** | Static assets | `public/`, `resources/assets/` |
 
-## Enabling Bridges
+## Checking Bridge Status
 
-Configure bridges in `config/modular.php`:
+```bash
+php artisan modular:bridges
+```
+
+Output:
+```
+┌─────────────────┬───────────┬─────────┬─────────┐
+│ Bridge          │ Available │ Status  │ Modules │
+├─────────────────┼───────────┼─────────┼─────────┤
+│ RouteBridge     │ ✓         │ Enabled │ 12      │
+│ BladeBridge     │ ✓         │ Enabled │ 8       │
+│ LivewireBridge  │ ✓         │ Enabled │ 5       │
+│ FilamentBridge  │ ✓         │ Enabled │ 15      │
+└─────────────────┴───────────┴─────────┴─────────┘
+```
+
+Inspect a specific bridge:
+
+```bash
+php artisan modular:bridges:inspect route
+```
+
+## Configuration
+
+Enable or disable bridges in `config/modular.php`:
 
 ```php
 'bridges' => [
-    'route' => true,
-    'blade' => true,
-    'migration' => true,
-    'config' => true,
-    'translation' => true,
-    'command' => false, // Disabled
-    'observer' => true,
-    'policy' => true,
-    'service' => true,
-    'event' => true,
-    'schedule' => false,
-    'livewire' => true,
-    'filament' => true,
-    'asset' => true,
-    'link' => true,
+    'routes' => [
+        'enabled' => true,
+        'prefix' => null,
+        'middleware' => ['web'],
+    ],
+    'blade' => [
+        'enabled' => true,
+    ],
+    'livewire' => [
+        'enabled' => true,
+    ],
+    'filament' => [
+        'enabled' => true,
+    ],
+    // ...
 ],
 ```
 
-## Route Bridge
+## Bridge Caching
 
-The Route Bridge supports versioned APIs and domain routing.
-
-### Basic Routes
-
-```
-Modules/Products/routes/
-├── web.php      # Web routes
-├── api.php      # API routes
-└── console.php  # Console routes
-```
-
-### Versioned APIs
-
-```
-Modules/Products/routes/
-└── api/
-    ├── v1.php   # /api/v1/products
-    └── v2.php   # /api/v2/products
-```
-
-### Configuration
-
-```php
-'route' => [
-    'enabled' => true,
-    'prefix' => true,        // Prefix with module alias
-    'middleware' => ['web'], // Default middleware
-    'api_prefix' => 'api',
-    'api_middleware' => ['api'],
-],
-```
-
-## Config Bridge
-
-The Config Bridge merges module configs with deep array merging.
-
-### Basic Config
-
-```php
-// Modules/Products/config/config.php
-return [
-    'per_page' => 20,
-    'cache_ttl' => 3600,
-];
-```
-
-Access via: `config('products.per_page')`
-
-### Environment Overrides
-
-```
-Modules/Products/config/
-├── config.php         # Base config
-├── testing.php        # Testing overrides
-└── production.php     # Production overrides
-```
-
-## Blade Bridge
-
-Registers views and components automatically.
-
-### Views
-
-```
-Modules/Products/resources/views/
-├── index.blade.php
-├── show.blade.php
-└── components/
-    └── card.blade.php
-```
-
-Use in templates:
-
-```blade
-@include('products::index')
-
-<x-products::card :product="$product" />
-```
-
-## Service Bridge
-
-Auto-binds contracts to implementations.
-
-### Convention
-
-```php
-// Contract: Modules/Products/app/Contracts/ProductRepositoryContract.php
-// Implementation: Modules/Products/app/Repositories/ProductRepository.php
-```
-
-The bridge automatically binds `ProductRepositoryContract` to `ProductRepository`.
-
-## Bridge Commands
+In production, cache bridge discovery:
 
 ```bash
-# List all bridges and their status
-php artisan modular:bridges
-
-# Inspect a specific bridge
-php artisan modular:bridges:inspect route
-
-# Cache bridge discovery
 php artisan modular:bridges:cache
+```
 
-# Clear bridge cache
+Clear the cache:
+
+```bash
 php artisan modular:bridges:clear
+```
+
+## How Bridges Work
+
+1. **Discovery**: Bridge scans configured directories in each module
+2. **Registration**: Components are registered with Laravel
+3. **Caching**: Discovery results are cached for performance
+
+```php
+// BridgeManager orchestrates all bridges
+$manager = app(BridgeManager::class);
+
+// Get all bridges
+$bridges = $manager->all();
+
+// Check if a bridge is available
+$manager->get('route')->isAvailable();
 ```
 
 ## Creating Custom Bridges
 
-Extend `AbstractBridge` to create custom bridges:
+Extend `AbstractBridge`:
 
 ```php
 use Esegments\ModularArchitecture\Bridges\AbstractBridge;
 
 class CustomBridge extends AbstractBridge
 {
-    public function getName(): string
+    public function name(): string
     {
-        return 'custom';
+        return 'CustomBridge';
     }
 
     public function isAvailable(): bool
     {
-        return true;
+        return class_exists(SomePackage::class);
     }
 
-    public function registerModule(Module $module): void
+    protected function registerModule(Module $module): void
     {
         // Discovery and registration logic
-    }
-
-    public function boot(): void
-    {
-        // Boot logic
     }
 }
 ```
 
-Register in a service provider:
+Register in `config/modular.php`:
 
 ```php
-$bridgeManager = app(BridgeManager::class);
-$bridgeManager->extend('custom', fn() => new CustomBridge());
+'bridges' => [
+    'custom' => [
+        'enabled' => true,
+        'class' => App\Bridges\CustomBridge::class,
+    ],
+],
 ```

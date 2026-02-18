@@ -1,122 +1,135 @@
 ---
-title: "Getting Started"
-description: "Learn how to install and configure Modular Architecture"
-order: 1
+layout: docs
+title: Getting Started
+description: Install and configure the Modular Architecture package
 ---
-
-## Requirements
-
-- PHP 8.2+
-- Laravel 11+
 
 ## Installation
 
-Install via Composer:
+Install the package via Composer:
 
 ```bash
 composer require esegments/modular-architecture
 ```
 
-Publish the configuration:
+## Publish Configuration
+
+Publish the configuration file:
 
 ```bash
-php artisan vendor:publish --provider="Esegments\ModularArchitecture\ModularServiceProvider"
+php artisan vendor:publish --tag=modular-config
 ```
 
 This creates `config/modular.php` with all available options.
 
+## Directory Structure
+
+By default, modules are stored in the `Modules/` directory:
+
+```
+your-app/
+├── app/
+├── Modules/
+│   ├── Blog/
+│   │   ├── app/
+│   │   │   ├── Models/
+│   │   │   ├── Providers/
+│   │   │   └── ...
+│   │   ├── config/
+│   │   ├── database/
+│   │   ├── resources/
+│   │   ├── routes/
+│   │   └── module.json
+│   └── Shop/
+│       └── ...
+├── config/
+│   └── modular.php
+└── ...
+```
+
 ## Creating Your First Module
 
-Use the Artisan command to scaffold a new module:
+Generate a new module using Artisan:
 
 ```bash
-php artisan modular:make-module Products
+php artisan modular:make Blog
 ```
 
-This creates a complete module structure:
+Or with additional components:
 
-```
-Modules/Products/
-├── app/
-│   ├── Models/
-│   ├── Providers/
-│   │   └── ProductsServiceProvider.php
-│   ├── Http/
-│   │   └── Controllers/
-│   └── ...
-├── database/
-│   ├── migrations/
-│   ├── factories/
-│   └── seeders/
-├── config/
-│   └── config.php
-├── routes/
-│   ├── web.php
-│   └── api.php
-├── resources/
-│   └── views/
-├── tests/
-├── composer.json
-└── module.json
+```bash
+php artisan modular:make Blog --all
 ```
 
-## Module Manifest
+This creates:
+- Model
+- Controller
+- Views
+- Routes
+- Config
+- Tests
 
-Every module has a `module.json` manifest:
+## Interactive Mode
 
-```json
-{
-  "name": "Products",
-  "alias": "products",
-  "version": "1.0.0",
-  "description": "Product management module",
-  "providers": [
-    "Modules\\Products\\Providers\\ProductsServiceProvider"
-  ],
-  "dependencies": {
-    "Core": "^1.0"
-  }
-}
+For a guided experience:
+
+```bash
+php artisan modular:make
 ```
 
-## Enabling Bridges
+You'll be prompted for:
+- Module name
+- Version
+- Description
+- Components to generate
 
-By default, bridges are disabled. Enable them in `config/modular.php`:
+## Basic Usage
+
+### List Modules
+
+```bash
+php artisan modular:list
+```
+
+### Enable/Disable Modules
+
+```bash
+php artisan modular:enable Blog
+php artisan modular:disable Blog
+```
+
+### Check Status
+
+```bash
+php artisan modular:status Blog
+```
+
+## Using the Facade
 
 ```php
-'bridges' => [
-    'route' => true,
-    'blade' => true,
-    'migration' => true,
-    'config' => true,
-    'translation' => true,
-    'command' => true,
-    'observer' => true,
-    'policy' => true,
-    'service' => true,
-],
+use Esegments\ModularArchitecture\Facades\Modular;
+
+// Get all modules
+$modules = Modular::all();
+
+// Get enabled modules
+$enabled = Modular::enabled();
+
+// Find a specific module
+$blog = Modular::find('Blog');
+
+// Check if module exists
+if (Modular::exists('Blog')) {
+    // ...
+}
+
+// Enable/disable programmatically
+Modular::enable('Blog');
+Modular::disable('Blog');
 ```
-
-## Available Commands
-
-| Command | Description |
-|---------|-------------|
-| `modular:list` | List all modules |
-| `modular:enable {module}` | Enable a module |
-| `modular:disable {module}` | Disable a module |
-| `modular:status` | Show module status overview |
-| `modular:health {module?}` | Check module health |
-| `modular:migrate {module}` | Run module migrations |
-| `modular:seed {module}` | Run module seeders |
-| `modular:make-module {name}` | Create a new module |
-| `modular:make-service {name}` | Create a service class |
-| `modular:make-repository {name}` | Create a repository |
-| `modular:make-dto {name}` | Create a DTO |
-| `modular:make-action {name}` | Create an action class |
 
 ## Next Steps
 
-- [Configuration](/docs/configuration/) - Learn about all configuration options
-- [Bridges](/docs/bridges/) - Understand framework bridges
-- [Link Registry](/docs/link-registry/) - Define cross-module relationships
-- [Commands](/docs/commands/) - Explore all available commands
+- [Module Structure](/docs/module-structure/) - Learn about module organization
+- [Framework Bridges](/docs/bridges/) - Auto-register routes, views, and more
+- [Configuration](/docs/configuration/) - Full configuration reference
