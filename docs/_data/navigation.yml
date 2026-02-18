@@ -4,6 +4,8 @@ main:
     url: "/"
   - title: "Docs"
     url: "/docs/getting-started/"
+  - title: "CLI"
+    url: "/cli/"
   - title: "Changelog"
     url: "/changelog/"
 
