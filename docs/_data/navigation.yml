@@ -11,16 +11,68 @@ main:
 
 # Documentation sidebar
 docs:
-  - title: "Getting Started"
-    url: "/docs/getting-started/"
-  - title: "Bridges"
-    url: "/docs/bridges/"
-  - title: "Link Registry"
-    url: "/docs/link-registry/"
-  - title: "Commands"
-    url: "/docs/commands/"
-  - title: "Configuration"
-    url: "/docs/configuration/"
+  - title: "Introduction"
+    items:
+      - title: "Getting Started"
+        url: "/docs/getting-started/"
+      - title: "Configuration"
+        url: "/docs/configuration/"
+
+  - title: "Module System"
+    items:
+      - title: "Creating Modules"
+        url: "/docs/creating-modules/"
+      - title: "Module Structure"
+        url: "/docs/module-structure/"
+      - title: "Module Manifest"
+        url: "/docs/module-manifest/"
+      - title: "Module Lifecycle"
+        url: "/docs/module-lifecycle/"
+
+  - title: "Dependencies"
+    items:
+      - title: "Dependency Resolution"
+        url: "/docs/dependencies/"
+      - title: "Validation"
+        url: "/docs/validation/"
+
+  - title: "Framework Bridges"
+    items:
+      - title: "Overview"
+        url: "/docs/bridges/"
+      - title: "Route Bridge"
+        url: "/docs/bridges/routes/"
+      - title: "Blade Bridge"
+        url: "/docs/bridges/blade/"
+      - title: "Livewire Bridge"
+        url: "/docs/bridges/livewire/"
+      - title: "Filament Bridge"
+        url: "/docs/bridges/filament/"
+      - title: "Event Bridge"
+        url: "/docs/bridges/events/"
+      - title: "Other Bridges"
+        url: "/docs/bridges/other/"
+
+  - title: "Link System"
+    items:
+      - title: "Overview"
+        url: "/docs/links/"
+      - title: "Link Definitions"
+        url: "/docs/link-definitions/"
+
+  - title: "Extension Points"
+    items:
+      - title: "Lifecycle Hooks"
+        url: "/docs/extension-points/"
+
+  - title: "Advanced"
+    items:
+      - title: "GitHub Integration"
+        url: "/docs/github-integration/"
+      - title: "Storage & Caching"
+        url: "/docs/storage-caching/"
+      - title: "Octane Support"
+        url: "/docs/octane/"
 
 # Call to action button in header
 cta:
