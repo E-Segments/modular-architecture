@@ -2,6 +2,8 @@
 layout: docs
 title: Other Bridges
 description: Command, Middleware, Service, Config, Asset, Schedule, Migration, and Translation bridges
+order: 36
+parent: "Bridges"
 ---
 
 ## Command Bridge

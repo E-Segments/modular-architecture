@@ -2,6 +2,8 @@
 layout: docs
 title: Framework Bridges
 description: Auto-register module components with Laravel
+order: 30
+parent: "Bridges"
 ---
 
 ## Overview

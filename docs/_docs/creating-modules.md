@@ -2,6 +2,8 @@
 layout: docs
 title: Creating Modules
 description: Generate new modules with the Artisan command
+order: 10
+parent: "Module System"
 ---
 
 ## Interactive Mode

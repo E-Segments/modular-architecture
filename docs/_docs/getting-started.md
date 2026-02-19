@@ -2,6 +2,7 @@
 layout: docs
 title: Getting Started
 description: Install and configure the Modular Architecture package
+order: 1
 ---
 
 ## Installation

@@ -2,6 +2,8 @@
 layout: docs
 title: Validation
 description: Validate modules and their dependencies
+order: 21
+parent: "Dependencies"
 ---
 
 ## Module Validation

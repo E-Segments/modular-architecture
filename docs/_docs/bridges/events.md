@@ -2,6 +2,8 @@
 layout: docs
 title: Event & Observer Bridges
 description: Auto-register events, listeners, and observers
+order: 35
+parent: "Bridges"
 ---
 
 ## Event Bridge

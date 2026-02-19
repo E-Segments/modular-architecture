@@ -2,6 +2,8 @@
 layout: docs
 title: Storage & Caching
 description: Module state persistence and performance optimization
+order: 52
+parent: "Advanced"
 ---
 
 ## Storage Drivers

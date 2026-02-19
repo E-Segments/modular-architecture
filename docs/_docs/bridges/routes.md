@@ -2,6 +2,8 @@
 layout: docs
 title: Route Bridge
 description: Auto-load module routes with versioning support
+order: 31
+parent: "Bridges"
 ---
 
 ## Overview

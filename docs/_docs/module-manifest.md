@@ -2,6 +2,8 @@
 layout: docs
 title: Module Manifest
 description: The module.json configuration file
+order: 12
+parent: "Module System"
 ---
 
 ## Overview

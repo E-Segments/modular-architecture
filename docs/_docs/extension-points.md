@@ -2,6 +2,8 @@
 layout: docs
 title: Extension Points
 description: Hook into module lifecycle events
+order: 50
+parent: "Advanced"
 ---
 
 ## Overview

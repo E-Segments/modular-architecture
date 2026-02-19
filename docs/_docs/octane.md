@@ -2,6 +2,8 @@
 layout: docs
 title: Octane Support
 description: Using modular architecture with Laravel Octane
+order: 53
+parent: "Advanced"
 ---
 
 ## Overview

@@ -2,6 +2,8 @@
 layout: docs
 title: Blade Bridge
 description: Auto-register views and Blade components
+order: 32
+parent: "Bridges"
 ---
 
 ## Overview

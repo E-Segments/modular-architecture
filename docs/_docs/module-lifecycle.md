@@ -2,6 +2,8 @@
 layout: docs
 title: Module Lifecycle
 description: Enable, disable, install, update, and remove modules
+order: 13
+parent: "Module System"
 ---
 
 ## Module States

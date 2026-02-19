@@ -2,6 +2,8 @@
 layout: docs
 title: Filament Bridge
 description: Auto-discover Filament resources, pages, and widgets
+order: 34
+parent: "Bridges"
 ---
 
 ## Overview

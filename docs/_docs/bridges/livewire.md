@@ -2,6 +2,8 @@
 layout: docs
 title: Livewire Bridge
 description: Auto-register Livewire components from modules
+order: 33
+parent: "Bridges"
 ---
 
 ## Overview

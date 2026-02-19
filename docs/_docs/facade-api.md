@@ -2,6 +2,8 @@
 layout: docs
 title: Facade API Reference
 description: Complete Modular and Links facade methods
+order: 54
+parent: "Advanced"
 ---
 
 ## Modular Facade

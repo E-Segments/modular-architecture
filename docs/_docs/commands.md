@@ -1,7 +1,8 @@
 ---
 title: "Artisan Commands"
 description: "All available Artisan commands"
-order: 5
+order: 55
+parent: "Advanced"
 ---
 
 Modular Architecture provides 30+ Artisan commands for module management and code generation.

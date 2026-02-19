@@ -2,6 +2,8 @@
 layout: docs
 title: Link System
 description: Cross-module relationships without tight coupling
+order: 40
+parent: "Links"
 ---
 
 ## Overview

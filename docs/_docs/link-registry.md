@@ -1,7 +1,8 @@
 ---
 title: "Link Registry"
 description: "Define cross-module relationships without tight coupling"
-order: 3
+order: 42
+parent: "Links"
 ---
 
 The Link Registry system provides a fluent API for defining cross-module relationships, macros, and Filament integrations without creating tight coupling between modules.

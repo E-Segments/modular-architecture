@@ -2,6 +2,8 @@
 layout: docs
 title: Module Structure
 description: Understanding the anatomy of a module
+order: 11
+parent: "Module System"
 ---
 
 ## Standard Module Structure

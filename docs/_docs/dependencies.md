@@ -2,6 +2,8 @@
 layout: docs
 title: Dependency Resolution
 description: Managing module dependencies and load order
+order: 20
+parent: "Dependencies"
 ---
 
 ## Declaring Dependencies

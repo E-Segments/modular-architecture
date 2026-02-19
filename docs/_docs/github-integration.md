@@ -2,6 +2,8 @@
 layout: docs
 title: GitHub Integration
 description: Install and update modules from GitHub
+order: 51
+parent: "Advanced"
 ---
 
 ## Overview

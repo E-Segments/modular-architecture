@@ -2,6 +2,8 @@
 layout: docs
 title: Link Definitions
 description: Fluent API for defining cross-module relationships
+order: 41
+parent: "Links"
 ---
 
 ## Creating a Link Definition
